@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard CX — Xtay</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#FF6A13;--orange-d:#D94F00;--orange-l:#FFF0E6;--orange-m:#FFD9BE;
+  --bg:#FAFAFA;--surface:#FFFFFF;--border:#EDEDED;
+  --text1:#1A1A1A;--text2:#555;--text3:#999;
+  --green:#22C55E;--amber:#F59E0B;--red:#EF4444;--blue:#4F79E4;
+  --radius:10px;--shadow:0 1px 3px rgba(0,0,0,.07);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text1);font-size:14px;line-height:1.5}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.topbar-logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:28px;height:28px;background:var(--orange);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+.topbar-title{font-size:15px;font-weight:600}
+.topbar-sub{font-size:11px;color:var(--text3);margin-left:2px}
+.tabs{display:flex;gap:3px;background:var(--bg);border-radius:8px;padding:3px}
+.tab{padding:5px 14px;border-radius:6px;border:none;background:transparent;font-size:12px;font-weight:500;cursor:pointer;color:var(--text2);transition:all .15s}
+.tab.active{background:var(--orange);color:#fff}
+.tab:hover:not(.active){background:var(--orange-m);color:var(--orange-d)}
+.main{padding:20px 24px;max-width:1320px;margin:0 auto}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:22px 0 10px}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+@media(max-width:900px){.g21{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.card-title{font-size:13px;font-weight:600;margin-bottom:14px}
+.card-sub{font-size:11px;color:var(--text3);margin-left:6px;font-weight:400}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi-icon{width:32px;height:32px;background:var(--orange-l);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.kpi-icon svg{width:16px;height:16px;stroke:var(--orange);fill:none;stroke-width:2;stroke-linecap:round}
+.kpi-label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.kpi-val{font-size:28px;font-weight:700;margin:3px 0 1px;line-height:1}
+.kpi-sub{font-size:11px;color:var(--text3)}
+.kpi.accent{background:var(--orange);border-color:var(--orange-d)}
+.kpi.accent .kpi-icon{background:rgba(255,255,255,.2)}
+.kpi.accent .kpi-icon svg{stroke:#fff}
+.kpi.accent .kpi-label{color:rgba(255,255,255,.75)}
+.kpi.accent .kpi-val{color:#fff}
+.kpi.accent .kpi-sub{color:rgba(255,255,255,.65)}
+.ch{position:relative}
+.classif-row{display:grid;grid-template-columns:210px 1fr 70px 72px 72px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.classif-row:last-child{border-bottom:none}
+.classif-row:hover{background:var(--orange-l);margin:0 -18px;padding:9px 18px;border-radius:6px}
+.classif-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
+.classif-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.classif-bar-wrap{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.classif-bar{height:100%;border-radius:4px;transition:width .4s ease}
+.classif-count{font-size:13px;font-weight:600;text-align:right}
+.classif-time{font-size:12px;color:var(--text2);text-align:right}
+.classif-head{display:grid;grid-template-columns:210px 1fr 70px 72px 72px;gap:10px;padding:0 0 6px;border-bottom:2px solid var(--border)}
+.classif-head span{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
+.classif-head span:nth-child(n+3){text-align:right}
+.tag-detail{display:none;margin:4px 0 8px;padding:12px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
+.tag-detail.open{display:block}
+.tag-item{display:flex;align-items:center;gap:8px;padding:4px 0}
+.tag-item-label{flex:1;font-size:12px;color:var(--text2)}
+.tag-item-bar{flex:2;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.tag-item-fill{height:100%;border-radius:3px}
+.tag-item-count{font-size:12px;font-weight:600;min-width:28px;text-align:right}
+.emp-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.emp-row:last-child{border-bottom:none}
+.emp-name{width:115px;font-size:13px;flex-shrink:0}
+.emp-cluster{width:88px;font-size:11px;color:var(--text3);flex-shrink:0}
+.emp-bar-wrap{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden}
+.emp-bar{height:100%;background:var(--orange);border-radius:4px}
+.emp-count{font-size:13px;font-weight:600;min-width:36px;text-align:right}
+.emp-occ{font-size:11px;color:var(--text3);min-width:46px;text-align:right;flex-shrink:0}
+.taxa-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;min-width:46px;text-align:center;flex-shrink:0}
+.taxa-g{background:#DCFCE7;color:#15803D}
+.taxa-a{background:#FEF9C3;color:#92400E}
+.taxa-r{background:#FEE2E2;color:#991B1B}
+.emp-head{display:flex;align-items:center;gap:10px;padding:0 0 6px;border-bottom:2px solid var(--border);margin-bottom:2px}
+.emp-head span{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);padding:0 8px 8px;border-bottom:1px solid var(--border)}
+thead th:not(:first-child){text-align:right}
+tbody tr:hover{background:var(--orange-l)}
+tbody td{padding:8px;border-bottom:1px solid var(--border);color:var(--text2)}
+tbody td:first-child{color:var(--text1);font-weight:500}
+tbody td:not(:first-child){text-align:right}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.pill-g{background:#DCFCE7;color:#15803D}
+.pill-a{background:#FEF9C3;color:#92400E}
+.pill-r{background:#FEE2E2;color:#991B1B}
+select{padding:7px 12px;border-radius:8px;border:1px solid var(--border);font-size:13px;width:100%;color:var(--text1);background:var(--surface);margin-bottom:14px;outline:none}
+select:focus{border-color:var(--orange)}
+.footer{text-align:center;font-size:11px;color:var(--text3);padding:24px 0 36px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-mark">CX</div>
+    <div><div class="topbar-title">Dashboard CX <span class="topbar-sub">· Xtay</span></div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <div class="tabs" id="view-tabs">
+      <button class="tab" onclick="setView('diario')">Diário</button>
+      <button class="tab" onclick="setView('semanal')">Semanal</button>
+      <button class="tab" onclick="setView('mensal')">Mensal</button>
+    </div>
+    <span style="font-size:11px;color:var(--text3)" id="ts"></span>
+  </div>
+</div>
+<div class="main">
+  <div class="section-label">Visão geral · <span id="periodo-label"></span></div>
+  <div class="kpi-grid">
+    <div class="kpi accent">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="kpi-label">Atendimentos</div>
+      <div class="kpi-val" id="kpi-total">—</div>
+      <div class="kpi-sub">tickets únicos</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="kpi-label">1ª resposta (média)</div>
+      <div class="kpi-val" id="kpi-tpr">—</div>
+      <div class="kpi-sub">minutos</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+      <div class="kpi-label">Até fechamento (média)</div>
+      <div class="kpi-val" id="kpi-ttf">—</div>
+      <div class="kpi-sub">minutos</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div class="kpi-label">Empreendimentos</div>
+      <div class="kpi-val" id="kpi-empreend">—</div>
+      <div class="kpi-sub">com atendimentos</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="kpi-label">Maior classificação</div>
+      <div class="kpi-val" style="font-size:15px;margin-top:6px" id="kpi-top-classif">—</div>
+      <div class="kpi-sub" id="kpi-top-classif-n"></div>
+    </div>
+  </div>
+
+  <div class="section-label">Volume de atendimentos</div>
+  <div class="card">
+    <div class="card-title">Atendimentos por período <span class="card-sub" id="volume-sub"></span></div>
+    <div class="ch" style="height:220px"><canvas id="chart-vol"></canvas></div>
+  </div>
+
+  <div class="section-label">Motivos de contato</div>
+  <div class="card">
+    <div class="card-title">Volume por classificação <span class="card-sub">· clique para ver top tags</span></div>
+    <div class="classif-head">
+      <span>Classificação</span><span></span><span>Tickets</span><span>TPR méd.</span><span>TTF méd.</span>
+    </div>
+    <div id="classif-list"></div>
+  </div>
+
+  <div class="section-label">Empreendimentos · Clusters · Prioridade</div>
+  <div class="g21">
+    <div class="card">
+      <div class="card-title">Volume por empreendimento</div>
+      <div id="emp-list"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="card-title">Por cluster</div>
+        <div class="ch" style="height:200px"><canvas id="chart-cluster"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Por prioridade</div>
+        <div class="ch" style="height:140px"><canvas id="chart-prior"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Top motivos por empreendimento</div>
+  <div class="card">
+    <div class="card-title">Selecione o empreendimento</div>
+    <select id="emp-select" onchange="renderEmpDetail()"></select>
+    <div class="ch" style="height:280px"><canvas id="chart-emp-detail"></canvas></div>
+  </div>
+
+  <div class="section-label">Performance por analista</div>
+  <div class="card">
+    <table>
+      <thead><tr>
+        <th>Analista</th><th>Tickets</th><th>TPR méd. (min)</th><th>TTF méd. (min)</th><th>Msgs/ticket</th>
+      </tr></thead>
+      <tbody id="agentes-tbody"></tbody>
+    </table>
+  </div>
+</div>
+<div class="footer" id="footer"></div>
+<script>
+var D=__DATA__;
+var chartVol=null,chartCluster=null,chartPrior=null,chartEmpDet=null;
+var activeView='semanal',openClassif=null;
+function fmt(n,d){d=d||1;if(n==null||n===undefined)return'—';return(+n).toFixed(d);}
+function setView(v){
+  activeView=v;
+  var tabs=document.querySelectorAll('#view-tabs .tab');
+  ['diario','semanal','mensal'].forEach(function(x,i){tabs[i].classList.toggle('active',x===v);});
+  renderVolume();
+  document.getElementById('volume-sub').textContent=v==='diario'?'· por dia':v==='semanal'?'· por semana':'· por mês';
+}
+function renderKPIs(){
+  document.getElementById('kpi-total').textContent=D.total.toLocaleString('pt-BR');
+  document.getElementById('kpi-tpr').textContent=fmt(D.tpr_med);
+  document.getElementById('kpi-ttf').textContent=fmt(D.ttf_med);
+  document.getElementById('periodo-label').textContent=D.periodo;
+  document.getElementById('ts').textContent='Gerado em '+D.gerado_em;
+  document.getElementById('footer').textContent='Dashboard CX Xtay · '+D.gerado_em+' · '+D.periodo;
+  document.getElementById('kpi-empreend').textContent=D.empreendimentos.filter(function(e){return e.count>0;}).length;
+  var top=D.classifs.slice().sort(function(a,b){return b.count-a.count;})[0];
+  if(top){document.getElementById('kpi-top-classif').textContent=top.label;document.getElementById('kpi-top-classif-n').textContent=top.count.toLocaleString('pt-BR')+' tickets';}
+}
+function renderVolume(){
+  var labels,data;
+  if(activeView==='diario'){labels=D.dias.map(function(x){var p=x.d.split('-');return p[2]+'/'+p[1];});data=D.dias.map(function(x){return x.c;});}
+  else if(activeView==='semanal'){labels=D.semanas.map(function(x){return x.d;});data=D.semanas.map(function(x){return x.c;});}
+  else{labels=D.meses.map(function(x){return x.d;});data=D.meses.map(function(x){return x.c;});}
+  if(chartVol)chartVol.destroy();
+  chartVol=new Chart(document.getElementById('chart-vol'),{
+    type:activeView==='mensal'?'bar':'line',
+    data:{labels:labels,datasets:[{data:data,borderColor:'#FF6A13',backgroundColor:activeView==='mensal'?'rgba(255,106,19,.75)':'rgba(255,106,19,.08)',borderWidth:2,pointRadius:activeView==='diario'?2:4,pointBackgroundColor:'#FF6A13',fill:activeView!=='mensal',tension:0.35,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:12,font:{size:11}}},y:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}}}}
+  });
+}
+function renderClassifs(){
+  var max=Math.max.apply(null,D.classifs.map(function(c){return c.count;}).concat([1]));
+  var html='';
+  D.classifs.forEach(function(c){
+    var barPct=Math.round(c.count/max*100);
+    var tags=c.top_tags.length===0?'<span style="font-size:12px;color:var(--text3)">Sem dados.</span>':c.top_tags.map(function(t){var w=Math.round(t.count/c.top_tags[0].count*100);return'<div class="tag-item"><span class="tag-item-label">'+t.label+'</span><div class="tag-item-bar"><div class="tag-item-fill" style="width:'+w+'%;background:'+c.cor+'"></div></div><span class="tag-item-count">'+t.count+'</span></div>';}).join('');
+    html+='<div class="classif-row" onclick="toggleClassif(\''+c.id+'\')"><span class="classif-name"><span class="classif-dot" style="background:'+c.cor+'"></span>'+c.label+'</span><div class="classif-bar-wrap"><div class="classif-bar" style="width:'+barPct+'%;background:'+c.cor+'"></div></div><span class="classif-count">'+c.count.toLocaleString('pt-BR')+'</span><span class="classif-time">'+fmt(c.tpr_med)+' min</span><span class="classif-time">'+fmt(c.ttf_med)+' min</span></div><div class="tag-detail" id="detail-'+c.id+'">'+tags+'</div>';
+  });
+  document.getElementById('classif-list').innerHTML=html;
+}
+function toggleClassif(id){
+  var panel=document.getElementById('detail-'+id);
+  if(openClassif&&openClassif!==id){var prev=document.getElementById('detail-'+openClassif);if(prev)prev.classList.remove('open');}
+  var isOpen=panel.classList.contains('open');
+  panel.classList.toggle('open',!isOpen);
+  openClassif=isOpen?null:id;
+}
+function renderEmpreendimentos(){
+  var max=Math.max.apply(null,D.empreendimentos.map(function(e){return e.count;}).concat([1]));
+  var temOcc=D.empreendimentos.some(function(e){return e.taxa_contato!=null;});
+  var head='';
+  if(temOcc){
+    head='<div class="emp-head">'+
+      '<span style="width:115px;flex-shrink:0">Empreendimento</span>'+
+      '<span style="width:88px;flex-shrink:0">Cluster</span>'+
+      '<span style="flex:1"></span>'+
+      '<span style="min-width:36px;text-align:right">Tickets</span>'+
+      '<span style="min-width:46px;text-align:right">Ocup.</span>'+
+      '<span style="min-width:46px;text-align:center">Taxa cx</span>'+
+    '</div>';
+  }
+  var html='';
+  D.empreendimentos.forEach(function(e){
+    var taxa=e.taxa_contato;
+    var taxaHtml='';
+    if(taxa!=null){
+      var cls=taxa>=60?'taxa-r':taxa>=40?'taxa-a':'taxa-g';
+      taxaHtml='<span class="taxa-pill '+cls+'">'+taxa.toFixed(0)+'%</span>';
+    }
+    var occHtml=e.occ_pct!=null?'<span class="emp-occ">'+e.occ_pct.toFixed(0)+'%</span>':'<span class="emp-occ">—</span>';
+    html+='<div class="emp-row"><span class="emp-name">'+e.nome+'</span><span class="emp-cluster">'+e.cluster+'</span><div class="emp-bar-wrap"><div class="emp-bar" style="width:'+Math.round(e.count/max*100)+'%"></div></div><span class="emp-count">'+e.count+'</span>'+occHtml+taxaHtml+'</div>';
+  });
+  document.getElementById('emp-list').innerHTML=head+html;
+  var sel=document.getElementById('emp-select');
+  sel.innerHTML=D.empreendimentos.map(function(e){return'<option value="'+e.nome+'">'+e.nome+' ('+e.count+')</option>';}).join('');
+  renderEmpDetail();
+}
+function renderEmpDetail(){
+  var nome=document.getElementById('emp-select').value;
+  var emp=null;D.empreendimentos.forEach(function(e){if(e.nome===nome)emp=e;});
+  if(!emp||emp.top_motivos.length===0){if(chartEmpDet)chartEmpDet.destroy();return;}
+  var labels=emp.top_motivos.map(function(m){return m.label;}).reverse();
+  var data=emp.top_motivos.map(function(m){return m.count;}).reverse();
+  if(chartEmpDet)chartEmpDet.destroy();
+  chartEmpDet=new Chart(document.getElementById('chart-emp-detail'),{type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:'#FF6A13',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+}
+function renderClusters(){
+  if(chartCluster)chartCluster.destroy();
+  chartCluster=new Chart(document.getElementById('chart-cluster'),{type:'doughnut',data:{labels:D.clusters.map(function(c){return c.nome;}),datasets:[{data:D.clusters.map(function(c){return c.count;}),backgroundColor:['#FF6A13','#4F79E4','#9B59B6','#22C55E','#E67E22','#F59E0B'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:10}}}}});
+}
+function renderPrioridade(){
+  if(chartPrior)chartPrior.destroy();
+  chartPrior=new Chart(document.getElementById('chart-prior'),{type:'bar',data:{labels:['Alta','Média','Baixa'],datasets:[{data:[D.prioridades.Alta,D.prioridades.Media,D.prioridades.Baixa],backgroundColor:['#EF4444','#F59E0B','#22C55E'],borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}}}}});
+}
+function renderAgentes(){
+  var html='';
+  D.agentes.forEach(function(a){var tpr=a.tpr_med;var cls=tpr==null?'':tpr<=5?'pill-g':tpr<=15?'pill-a':'pill-r';html+='<tr><td>'+a.nome+'</td><td>'+a.tickets+'</td><td><span class="pill '+cls+'">'+fmt(tpr)+'</span></td><td>'+fmt(a.ttf_med)+'</td><td>'+fmt(a.msgs_med)+'</td></tr>';});
+  document.getElementById('agentes-tbody').innerHTML=html;
+}
+renderKPIs();renderVolume();renderClassifs();renderEmpreendimentos();renderClusters();renderPrioridade();renderAgentes();setView('semanal');
+</script>
+</body>
+</html>
