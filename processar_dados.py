@@ -276,19 +276,41 @@ def processar(rows_droz, rows_occ=None):
     total = len(ticket_base)
 
     # Leitura de OCC
-    occ_data = {}
+    # Estrutura da aba "Reservas e OCC" (com coluna Mês em A):
+    #   col A (0): mês          ex: "2026-04" ou "Abr/26"
+    #   col B (1): empreendimento
+    #   col E (4): unidades ocupadas (reservas)
+    #   col G (6): faturamento
+    #   col H (7): occ% (decimal 0-1 ou percentual 0-100)
+    occ_data = defaultdict(dict)   # {mes: {emp: {reservas, occ_pct, faturamento}}}
     if rows_occ:
         for row in rows_occ:
-            row = list(row) + [None]*8
-            if not _v(row[0]): continue
-            canon = detect_emp(str(row[0]))
+            row = list(row) + [None]*9
+            if not _v(row[1]): continue
+            mes = str(_v(row[0]) or "").strip()
+            canon = detect_emp(str(row[1]))
             if not canon: continue
-            un_ocup = _safe_int(row[3])
-            # occ_pct: pode vir como 0.72 (decimal) ou 72 (percentual)
-            occ_raw = _safe_float(row[6])
-            occ_pct = round(occ_raw*100, 1) if occ_raw <= 1.0 and occ_raw > 0 else round(occ_raw, 1)
-            fat = _safe_float(row[5])
-            occ_data[canon] = {"reservas": un_ocup, "occ_pct": occ_pct, "faturamento": fat}
+            un_ocup = _safe_int(row[4])
+            occ_raw = _safe_float(row[7])
+            occ_pct = round(occ_raw*100, 1) if 0 < occ_raw <= 1.0 else round(occ_raw, 1)
+            fat = _safe_float(row[6])
+            occ_data[mes][canon] = {"reservas": un_ocup, "occ_pct": occ_pct, "faturamento": fat}
+
+    # Agrega OCC de todos os meses (para visão geral)
+    occ_total = defaultdict(lambda: {"reservas": 0, "occ_pct_vals": [], "faturamento": 0.0})
+    for mes_data in occ_data.values():
+        for emp, vals in mes_data.items():
+            occ_total[emp]["reservas"] += vals["reservas"]
+            occ_total[emp]["faturamento"] += vals["faturamento"]
+            if vals["occ_pct"]: occ_total[emp]["occ_pct_vals"].append(vals["occ_pct"])
+    occ_agg = {}
+    for emp, v in occ_total.items():
+        pcts = v["occ_pct_vals"]
+        occ_agg[emp] = {
+            "reservas": v["reservas"],
+            "occ_pct": round(sum(pcts)/len(pcts), 1) if pcts else None,
+            "faturamento": round(v["faturamento"], 2),
+        }
 
     # Agregação
     vd=Counter(); vs=Counter(); vm=Counter()
@@ -348,7 +370,7 @@ def processar(rows_droz, rows_occ=None):
     emps_lista = []
     for nome in EMPREEND_ORDER:
         tickets = emp_c.get(nome,0)
-        occ = occ_data.get(nome,{})
+        occ = occ_agg.get(nome,{})
         reservas = occ.get("reservas",0)
         occ_pct = occ.get("occ_pct",None)
         taxa = round(tickets/reservas*100,1) if reservas>0 else None
@@ -370,6 +392,14 @@ def processar(rows_droz, rows_occ=None):
     pi=sorted(vm.keys())[0] if vm else ""; pf=sorted(vm.keys())[-1] if vm else ""
     periodo = (NM.get(pi[5:7],"")+(" – " if pi else "")+NM.get(pf[5:7],"")+(" "+pf[:4] if pf else "")) if pi else ""
 
+    # occ_meses: {mes: [{nome, reservas, occ_pct, faturamento}, ...]} — para filtro por mês no dashboard
+    occ_meses_payload = {}
+    for mes, mes_data in sorted(occ_data.items()):
+        occ_meses_payload[mes] = [
+            {"nome": emp, "reservas": v["reservas"], "occ_pct": v["occ_pct"], "faturamento": v["faturamento"]}
+            for emp, v in mes_data.items()
+        ]
+
     return {
         "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M"),
         "periodo": periodo,
@@ -385,6 +415,7 @@ def processar(rows_droz, rows_occ=None):
         "clusters": clusters_lista,
         "prioridades": {"Alta":pri.get("Alta",0),"Media":pri.get("Média",0),"Baixa":pri.get("Baixa",0)},
         "agentes": agentes,
+        "occ_meses": occ_meses_payload,   # dados de OCC/reservas separados por mês
     }
 
 # ── Uso local (python3 processar_dados.py) ──────────────────
@@ -395,7 +426,7 @@ if __name__ == "__main__":
     wb = openpyxl.load_workbook(ARQUIVO_ENTRADA)
 
     sheet_droz = None
-    for candidate in ["Input Droz (Abr-Mai)", "Resultado da consulta"]:
+    for candidate in ["Atendimentos", "Input Droz (Abr-Mai)", "Resultado da consulta"]:
         if candidate in wb.sheetnames:
             sheet_droz = wb[candidate]; break
     if not sheet_droz:
