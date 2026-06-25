@@ -13,7 +13,7 @@ from processar_dados import processar
 
 st.set_page_config(
     page_title="Dashboard CX · Xtay",
-    page_icon="🟠",
+    page_icon="📨",
     layout="wide",
 )
 
@@ -29,7 +29,7 @@ st.markdown("""
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
-@st.cache_data(ttl=300, show_spinner="Carregando dados do Google Sheets…")
+@st.cache_data(ttl=300, show_spinner="Carregando dados do Google Sheets…+")
 def load_data():
     creds_info = dict(st.secrets["gcp_service_account"])
     creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
@@ -38,9 +38,9 @@ def load_data():
     sheet_id = st.secrets["google_sheets"]["sheet_id"]
     sh = gc.open_by_key(sheet_id)
 
-    # Aba de atendimentos — aceita ambos os nomes
+    # Aba de atendimentos — aceita múltiplos nomes (ordem de prioridade)
     ws_droz = None
-    for name in ["Input Droz (Abr-Mai)", "Resultado da consulta"]:
+    for name in ["Atendimentos", "Input Droz (Abr-Mai)", "Resultado da consulta"]:
         try:
             ws_droz = sh.worksheet(name)
             break
