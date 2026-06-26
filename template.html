@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard CX â Xtay</title>
+<title>Dashboard CX — Xtay</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -45,7 +45,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .kpi.accent .kpi-val{color:#fff}
 .kpi.accent .kpi-sub{color:rgba(255,255,255,.65)}
 .ch{position:relative}
-.classif-row{display:grid;grid-template-columns:210px 1fr 70px 72px 72px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.classif-row{display:grid;grid-template-columns:240px 1fr 70px 72px 72px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer}
 .classif-row:last-child{border-bottom:none}
 .classif-row:hover{background:var(--orange-l);margin:0 -18px;padding:9px 18px;border-radius:6px}
 .classif-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
@@ -54,7 +54,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .classif-bar{height:100%;border-radius:4px;transition:width .4s ease}
 .classif-count{font-size:13px;font-weight:600;text-align:right}
 .classif-time{font-size:12px;color:var(--text2);text-align:right}
-.classif-head{display:grid;grid-template-columns:210px 1fr 70px 72px 72px;gap:10px;padding:0 0 6px;border-bottom:2px solid var(--border)}
+.classif-head{display:grid;grid-template-columns:240px 1fr 70px 72px 72px;gap:10px;padding:0 0 6px;border-bottom:2px solid var(--border)}
 .classif-head span{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
 .classif-head span:nth-child(n+3){text-align:right}
 .tag-detail{display:none;margin:4px 0 8px;padding:12px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
@@ -98,7 +98,7 @@ select:focus{border-color:var(--orange)}
 <div class="topbar">
   <div class="topbar-logo">
     <div class="logo-mark">CX</div>
-    <div><div class="topbar-title">Dashboard CX <span class="topbar-sub">Â· Xtay</span></div></div>
+    <div><div class="topbar-title">Dashboard CX <span class="topbar-sub">· Xtay</span></div></div>
   </div>
   <div style="display:flex;align-items:center;gap:16px">
     <div class="tabs" id="period-tabs"></div>
@@ -106,56 +106,56 @@ select:focus{border-color:var(--orange)}
   </div>
 </div>
 <div class="main">
-  <div class="section-label">VisÃ£o geral Â· <span id="periodo-label"></span></div>
+  <div class="section-label">Visão geral · <span id="periodo-label"></span></div>
   <div class="kpi-grid">
     <div class="kpi accent">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
       <div class="kpi-label">Atendimentos</div>
-      <div class="kpi-val" id="kpi-total">â</div>
-      <div class="kpi-sub">tickets Ãºnicos</div>
+      <div class="kpi-val" id="kpi-total">—</div>
+      <div class="kpi-sub">tickets únicos</div>
     </div>
     <div class="kpi">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-      <div class="kpi-label">1Âª resposta (mÃ©dia)</div>
-      <div class="kpi-val" id="kpi-tpr">â</div>
+      <div class="kpi-label">1ª resposta (média)</div>
+      <div class="kpi-val" id="kpi-tpr">—</div>
       <div class="kpi-sub">minutos</div>
     </div>
     <div class="kpi">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
-      <div class="kpi-label">AtÃ© fechamento (mÃ©dia)</div>
-      <div class="kpi-val" id="kpi-ttf">â</div>
+      <div class="kpi-label">Até fechamento (média)</div>
+      <div class="kpi-val" id="kpi-ttf">—</div>
       <div class="kpi-sub">minutos</div>
     </div>
     <div class="kpi">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
       <div class="kpi-label">Empreendimentos</div>
-      <div class="kpi-val" id="kpi-empreend">â</div>
+      <div class="kpi-val" id="kpi-empreend">—</div>
       <div class="kpi-sub">com atendimentos</div>
     </div>
     <div class="kpi">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-      <div class="kpi-label">Maior classificaÃ§Ã£o</div>
-      <div class="kpi-val" style="font-size:15px;margin-top:6px" id="kpi-top-classif">â</div>
+      <div class="kpi-label">Maior classificação</div>
+      <div class="kpi-val" style="font-size:15px;margin-top:6px" id="kpi-top-classif">—</div>
       <div class="kpi-sub" id="kpi-top-classif-n"></div>
     </div>
   </div>
 
   <div class="section-label">Volume de atendimentos</div>
   <div class="card">
-    <div class="card-title">Atendimentos por perÃ­odo <span class="card-sub" id="volume-sub"></span></div>
+    <div class="card-title">Atendimentos por período <span class="card-sub" id="volume-sub"></span></div>
     <div class="ch" style="height:220px"><canvas id="chart-vol"></canvas></div>
   </div>
 
   <div class="section-label">Motivos de contato</div>
   <div class="card">
-    <div class="card-title">Volume por classificaÃ§Ã£o <span class="card-sub">Â· clique para ver top tags</span></div>
+    <div class="card-title">Volume por classificação <span class="card-sub">· clique para ver top tags</span></div>
     <div class="classif-head">
-      <span>ClassificaÃ§Ã£o</span><span></span><span>Tickets</span><span>TPR mÃ©d.</span><span>TTF mÃ©d.</span>
+      <span>Classificação</span><span></span><span>Tickets</span><span>TPR méd.</span><span>TTF méd.</span>
     </div>
     <div id="classif-list"></div>
   </div>
 
-  <div class="section-label">Empreendimentos Â· Clusters Â· Prioridade</div>
+  <div class="section-label">Empreendimentos · Clusters · Prioridade</div>
   <div class="g21">
     <div class="card">
       <div class="card-title">Volume por empreendimento</div>
@@ -184,7 +184,7 @@ select:focus{border-color:var(--orange)}
   <div class="card">
     <table>
       <thead><tr>
-        <th>Analista</th><th>Tickets</th><th>TPR mÃ©d. (min)</th><th>TTF mÃ©d. (min)</th><th>Msgs/ticket</th>
+        <th>Analista</th><th>Tickets</th><th>TPR méd. (min)</th><th>TTF méd. (min)</th><th>Msgs/ticket</th>
       </tr></thead>
       <tbody id="agentes-tbody"></tbody>
     </table>
@@ -196,22 +196,22 @@ var D=__DATA__;
 var chartVol=null,chartCluster=null,chartPrior=null,chartEmpDet=null;
 var activeMonth='total',openClassif=null;
 
-// Retorna o dataset do perÃ­odo ativo
+// Retorna o dataset do período ativo
 function getD(){
   if(activeMonth==='total') return D;
   return D.por_mes[activeMonth]||D;
 }
 
-// Label do perÃ­odo ativo
+// Label do período ativo
 function getLabel(){
   if(activeMonth==='total') return D.periodo;
   var pm=D.por_mes[activeMonth];
   return pm?(pm.label+' '+activeMonth.slice(0,4)):D.periodo;
 }
 
-function fmt(n,d){d=d||1;if(n==null||n===undefined)return'â';return(+n).toFixed(d);}
+function fmt(n,d){d=d||1;if(n==null||n===undefined)return'—';return(+n).toFixed(d);}
 
-// ConstrÃ³i as abas de perÃ­odo dinamicamente
+// Constrói as abas de período dinamicamente
 function buildPeriodTabs(){
   var keys=['total'].concat(Object.keys(D.por_mes));
   var labels={'total':'Total'};
@@ -246,7 +246,7 @@ function renderKPIs(){
   document.getElementById('kpi-ttf').textContent=fmt(d.ttf_med);
   document.getElementById('periodo-label').textContent=getLabel();
   document.getElementById('ts').textContent='Gerado em '+D.gerado_em;
-  document.getElementById('footer').textContent='Dashboard CX Xtay Â· '+D.gerado_em+' Â· '+D.periodo;
+  document.getElementById('footer').textContent='Dashboard CX Xtay · '+D.gerado_em+' · '+D.periodo;
   document.getElementById('kpi-empreend').textContent=d.empreendimentos.filter(function(e){return e.count>0;}).length;
   var top=d.classifs.slice().sort(function(a,b){return b.count-a.count;})[0];
   if(top){document.getElementById('kpi-top-classif').textContent=top.label;document.getElementById('kpi-top-classif-n').textContent=top.count.toLocaleString('pt-BR')+' tickets';}
@@ -255,18 +255,18 @@ function renderKPIs(){
 function renderVolume(){
   var labels,data,isBar;
   if(activeMonth==='total'){
-    // Total: mostra por mÃªs
+    // Total: mostra por mês
     labels=D.meses.map(function(x){return x.d;});
     data=D.meses.map(function(x){return x.c;});
     isBar=true;
-    document.getElementById('volume-sub').textContent='Â· por mÃªs';
+    document.getElementById('volume-sub').textContent='· por mês';
   } else {
-    // MÃªs especÃ­fico: mostra por dia
+    // Mês específico: mostra por dia
     var pm=D.por_mes[activeMonth];
     labels=(pm&&pm.dias)?pm.dias.map(function(x){return x.d;}):[]; 
     data=(pm&&pm.dias)?pm.dias.map(function(x){return x.c;}):[]; 
     isBar=false;
-    document.getElementById('volume-sub').textContent='Â· por dia';
+    document.getElementById('volume-sub').textContent='· por dia';
   }
   if(chartVol)chartVol.destroy();
   chartVol=new Chart(document.getElementById('chart-vol'),{
@@ -334,7 +334,7 @@ function renderEmpreendimentos(){
       var cls=taxa>=60?'taxa-r':taxa>=40?'taxa-a':'taxa-g';
       taxaHtml='<span class="taxa-pill '+cls+'">'+taxa.toFixed(0)+'%</span>';
     }
-    var occHtml=e.occ_pct!=null?'<span class="emp-occ">'+e.occ_pct.toFixed(0)+'%</span>':'<span class="emp-occ">â</span>';
+    var occHtml=e.occ_pct!=null?'<span class="emp-occ">'+e.occ_pct.toFixed(0)+'%</span>':'<span class="emp-occ">—</span>';
     html+='<div class="emp-row">'+
       '<span class="emp-name">'+e.nome+'</span>'+
       '<span class="emp-cluster">'+e.cluster+'</span>'+
@@ -376,7 +376,7 @@ function renderClusters(){
     type:'doughnut',
     data:{labels:d.clusters.map(function(c){return c.nome;}),
       datasets:[{data:d.clusters.map(function(c){return c.count;}),
-        backgroundColor:['#FF6A13','#4F79E4','#9B59B6','#22C55E','#E67E22','#F59E0B'],borderWidth:0}]},
+        backgroundColor:['#FF6A13','#4F79E4','#9B59B6','#22C55E','#E67E22','#F59E0B','#1ABC9C'],borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:10}}}}
   });
@@ -387,7 +387,7 @@ function renderPrioridade(){
   if(chartPrior)chartPrior.destroy();
   chartPrior=new Chart(document.getElementById('chart-prior'),{
     type:'bar',
-    data:{labels:['Alta','MÃ©dia','Baixa'],
+    data:{labels:['Alta','Média','Baixa'],
       datasets:[{data:[d.prioridades.Alta,d.prioridades.Media,d.prioridades.Baixa],
         backgroundColor:['#EF4444','#F59E0B','#22C55E'],borderRadius:5}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
