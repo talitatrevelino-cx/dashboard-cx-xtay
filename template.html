@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard CX — Xtay</title>
+<title>Dashboard CX â Xtay</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -98,68 +98,64 @@ select:focus{border-color:var(--orange)}
 <div class="topbar">
   <div class="topbar-logo">
     <div class="logo-mark">CX</div>
-    <div><div class="topbar-title">Dashboard CX <span class="topbar-sub">· Xtay</span></div></div>
+    <div><div class="topbar-title">Dashboard CX <span class="topbar-sub">Â· Xtay</span></div></div>
   </div>
   <div style="display:flex;align-items:center;gap:16px">
-    <div class="tabs" id="view-tabs">
-      <button class="tab" onclick="setView('diario')">Diário</button>
-      <button class="tab" onclick="setView('semanal')">Semanal</button>
-      <button class="tab" onclick="setView('mensal')">Mensal</button>
-    </div>
+    <div class="tabs" id="period-tabs"></div>
     <span style="font-size:11px;color:var(--text3)" id="ts"></span>
   </div>
 </div>
 <div class="main">
-  <div class="section-label">Visão geral · <span id="periodo-label"></span></div>
+  <div class="section-label">VisÃ£o geral Â· <span id="periodo-label"></span></div>
   <div class="kpi-grid">
     <div class="kpi accent">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
       <div class="kpi-label">Atendimentos</div>
-      <div class="kpi-val" id="kpi-total">—</div>
-      <div class="kpi-sub">tickets únicos</div>
+      <div class="kpi-val" id="kpi-total">â</div>
+      <div class="kpi-sub">tickets Ãºnicos</div>
     </div>
     <div class="kpi">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-      <div class="kpi-label">1ª resposta (média)</div>
-      <div class="kpi-val" id="kpi-tpr">—</div>
+      <div class="kpi-label">1Âª resposta (mÃ©dia)</div>
+      <div class="kpi-val" id="kpi-tpr">â</div>
       <div class="kpi-sub">minutos</div>
     </div>
     <div class="kpi">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
-      <div class="kpi-label">Até fechamento (média)</div>
-      <div class="kpi-val" id="kpi-ttf">—</div>
+      <div class="kpi-label">AtÃ© fechamento (mÃ©dia)</div>
+      <div class="kpi-val" id="kpi-ttf">â</div>
       <div class="kpi-sub">minutos</div>
     </div>
     <div class="kpi">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
       <div class="kpi-label">Empreendimentos</div>
-      <div class="kpi-val" id="kpi-empreend">—</div>
+      <div class="kpi-val" id="kpi-empreend">â</div>
       <div class="kpi-sub">com atendimentos</div>
     </div>
     <div class="kpi">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-      <div class="kpi-label">Maior classificação</div>
-      <div class="kpi-val" style="font-size:15px;margin-top:6px" id="kpi-top-classif">—</div>
+      <div class="kpi-label">Maior classificaÃ§Ã£o</div>
+      <div class="kpi-val" style="font-size:15px;margin-top:6px" id="kpi-top-classif">â</div>
       <div class="kpi-sub" id="kpi-top-classif-n"></div>
     </div>
   </div>
 
   <div class="section-label">Volume de atendimentos</div>
   <div class="card">
-    <div class="card-title">Atendimentos por período <span class="card-sub" id="volume-sub"></span></div>
+    <div class="card-title">Atendimentos por perÃ­odo <span class="card-sub" id="volume-sub"></span></div>
     <div class="ch" style="height:220px"><canvas id="chart-vol"></canvas></div>
   </div>
 
   <div class="section-label">Motivos de contato</div>
   <div class="card">
-    <div class="card-title">Volume por classificação <span class="card-sub">· clique para ver top tags</span></div>
+    <div class="card-title">Volume por classificaÃ§Ã£o <span class="card-sub">Â· clique para ver top tags</span></div>
     <div class="classif-head">
-      <span>Classificação</span><span></span><span>Tickets</span><span>TPR méd.</span><span>TTF méd.</span>
+      <span>ClassificaÃ§Ã£o</span><span></span><span>Tickets</span><span>TPR mÃ©d.</span><span>TTF mÃ©d.</span>
     </div>
     <div id="classif-list"></div>
   </div>
 
-  <div class="section-label">Empreendimentos · Clusters · Prioridade</div>
+  <div class="section-label">Empreendimentos Â· Clusters Â· Prioridade</div>
   <div class="g21">
     <div class="card">
       <div class="card-title">Volume por empreendimento</div>
@@ -188,7 +184,7 @@ select:focus{border-color:var(--orange)}
   <div class="card">
     <table>
       <thead><tr>
-        <th>Analista</th><th>Tickets</th><th>TPR méd. (min)</th><th>TTF méd. (min)</th><th>Msgs/ticket</th>
+        <th>Analista</th><th>Tickets</th><th>TPR mÃ©d. (min)</th><th>TTF mÃ©d. (min)</th><th>Msgs/ticket</th>
       </tr></thead>
       <tbody id="agentes-tbody"></tbody>
     </table>
@@ -198,48 +194,115 @@ select:focus{border-color:var(--orange)}
 <script>
 var D=__DATA__;
 var chartVol=null,chartCluster=null,chartPrior=null,chartEmpDet=null;
-var activeView='semanal',openClassif=null;
-function fmt(n,d){d=d||1;if(n==null||n===undefined)return'—';return(+n).toFixed(d);}
-function setView(v){
-  activeView=v;
-  var tabs=document.querySelectorAll('#view-tabs .tab');
-  ['diario','semanal','mensal'].forEach(function(x,i){tabs[i].classList.toggle('active',x===v);});
-  renderVolume();
-  document.getElementById('volume-sub').textContent=v==='diario'?'· por dia':v==='semanal'?'· por semana':'· por mês';
+var activeMonth='total',openClassif=null;
+
+// Retorna o dataset do perÃ­odo ativo
+function getD(){
+  if(activeMonth==='total') return D;
+  return D.por_mes[activeMonth]||D;
 }
+
+// Label do perÃ­odo ativo
+function getLabel(){
+  if(activeMonth==='total') return D.periodo;
+  var pm=D.por_mes[activeMonth];
+  return pm?(pm.label+' '+activeMonth.slice(0,4)):D.periodo;
+}
+
+function fmt(n,d){d=d||1;if(n==null||n===undefined)return'â';return(+n).toFixed(d);}
+
+// ConstrÃ³i as abas de perÃ­odo dinamicamente
+function buildPeriodTabs(){
+  var keys=['total'].concat(Object.keys(D.por_mes));
+  var labels={'total':'Total'};
+  Object.keys(D.por_mes).forEach(function(k){labels[k]=D.por_mes[k].label;});
+  var html='';
+  keys.forEach(function(k){
+    html+='<button class="tab'+(k===activeMonth?' active':'')+'" onclick="setMonth(\''+k+'\')">'+labels[k]+'</button>';
+  });
+  document.getElementById('period-tabs').innerHTML=html;
+}
+
+function setMonth(m){
+  activeMonth=m;
+  buildPeriodTabs();
+  renderAll();
+}
+
+function renderAll(){
+  renderKPIs();
+  renderVolume();
+  renderClassifs();
+  renderEmpreendimentos();
+  renderClusters();
+  renderPrioridade();
+  renderAgentes();
+}
+
 function renderKPIs(){
-  document.getElementById('kpi-total').textContent=D.total.toLocaleString('pt-BR');
-  document.getElementById('kpi-tpr').textContent=fmt(D.tpr_med);
-  document.getElementById('kpi-ttf').textContent=fmt(D.ttf_med);
-  document.getElementById('periodo-label').textContent=D.periodo;
+  var d=getD();
+  document.getElementById('kpi-total').textContent=d.total.toLocaleString('pt-BR');
+  document.getElementById('kpi-tpr').textContent=fmt(d.tpr_med);
+  document.getElementById('kpi-ttf').textContent=fmt(d.ttf_med);
+  document.getElementById('periodo-label').textContent=getLabel();
   document.getElementById('ts').textContent='Gerado em '+D.gerado_em;
-  document.getElementById('footer').textContent='Dashboard CX Xtay · '+D.gerado_em+' · '+D.periodo;
-  document.getElementById('kpi-empreend').textContent=D.empreendimentos.filter(function(e){return e.count>0;}).length;
-  var top=D.classifs.slice().sort(function(a,b){return b.count-a.count;})[0];
+  document.getElementById('footer').textContent='Dashboard CX Xtay Â· '+D.gerado_em+' Â· '+D.periodo;
+  document.getElementById('kpi-empreend').textContent=d.empreendimentos.filter(function(e){return e.count>0;}).length;
+  var top=d.classifs.slice().sort(function(a,b){return b.count-a.count;})[0];
   if(top){document.getElementById('kpi-top-classif').textContent=top.label;document.getElementById('kpi-top-classif-n').textContent=top.count.toLocaleString('pt-BR')+' tickets';}
 }
+
 function renderVolume(){
-  var labels,data;
-  if(activeView==='diario'){labels=D.dias.map(function(x){var p=x.d.split('-');return p[2]+'/'+p[1];});data=D.dias.map(function(x){return x.c;});}
-  else if(activeView==='semanal'){labels=D.semanas.map(function(x){return x.d;});data=D.semanas.map(function(x){return x.c;});}
-  else{labels=D.meses.map(function(x){return x.d;});data=D.meses.map(function(x){return x.c;});}
+  var labels,data,isBar;
+  if(activeMonth==='total'){
+    // Total: mostra por mÃªs
+    labels=D.meses.map(function(x){return x.d;});
+    data=D.meses.map(function(x){return x.c;});
+    isBar=true;
+    document.getElementById('volume-sub').textContent='Â· por mÃªs';
+  } else {
+    // MÃªs especÃ­fico: mostra por dia
+    var pm=D.por_mes[activeMonth];
+    labels=(pm&&pm.dias)?pm.dias.map(function(x){return x.d;}):[]; 
+    data=(pm&&pm.dias)?pm.dias.map(function(x){return x.c;}):[]; 
+    isBar=false;
+    document.getElementById('volume-sub').textContent='Â· por dia';
+  }
   if(chartVol)chartVol.destroy();
   chartVol=new Chart(document.getElementById('chart-vol'),{
-    type:activeView==='mensal'?'bar':'line',
-    data:{labels:labels,datasets:[{data:data,borderColor:'#FF6A13',backgroundColor:activeView==='mensal'?'rgba(255,106,19,.75)':'rgba(255,106,19,.08)',borderWidth:2,pointRadius:activeView==='diario'?2:4,pointBackgroundColor:'#FF6A13',fill:activeView!=='mensal',tension:0.35,borderRadius:6}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:12,font:{size:11}}},y:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}}}}
+    type:isBar?'bar':'line',
+    data:{labels:labels,datasets:[{data:data,borderColor:'#FF6A13',
+      backgroundColor:isBar?'rgba(255,106,19,.75)':'rgba(255,106,19,.08)',
+      borderWidth:2,pointRadius:isBar?0:3,pointBackgroundColor:'#FF6A13',
+      fill:!isBar,tension:0.35,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{maxTicksLimit:14,font:{size:11}}},
+              y:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}}}}
   });
 }
+
 function renderClassifs(){
-  var max=Math.max.apply(null,D.classifs.map(function(c){return c.count;}).concat([1]));
+  var d=getD();
+  var max=Math.max.apply(null,d.classifs.map(function(c){return c.count;}).concat([1]));
   var html='';
-  D.classifs.forEach(function(c){
+  d.classifs.forEach(function(c){
     var barPct=Math.round(c.count/max*100);
-    var tags=c.top_tags.length===0?'<span style="font-size:12px;color:var(--text3)">Sem dados.</span>':c.top_tags.map(function(t){var w=Math.round(t.count/c.top_tags[0].count*100);return'<div class="tag-item"><span class="tag-item-label">'+t.label+'</span><div class="tag-item-bar"><div class="tag-item-fill" style="width:'+w+'%;background:'+c.cor+'"></div></div><span class="tag-item-count">'+t.count+'</span></div>';}).join('');
-    html+='<div class="classif-row" onclick="toggleClassif(\''+c.id+'\')"><span class="classif-name"><span class="classif-dot" style="background:'+c.cor+'"></span>'+c.label+'</span><div class="classif-bar-wrap"><div class="classif-bar" style="width:'+barPct+'%;background:'+c.cor+'"></div></div><span class="classif-count">'+c.count.toLocaleString('pt-BR')+'</span><span class="classif-time">'+fmt(c.tpr_med)+' min</span><span class="classif-time">'+fmt(c.ttf_med)+' min</span></div><div class="tag-detail" id="detail-'+c.id+'">'+tags+'</div>';
+    var tags=c.top_tags.length===0?'<span style="font-size:12px;color:var(--text3)">Sem dados.</span>':
+      c.top_tags.map(function(t){var w=Math.round(t.count/c.top_tags[0].count*100);
+        return'<div class="tag-item"><span class="tag-item-label">'+t.label+'</span><div class="tag-item-bar"><div class="tag-item-fill" style="width:'+w+'%;background:'+c.cor+'"></div></div><span class="tag-item-count">'+t.count+'</span></div>';
+      }).join('');
+    html+='<div class="classif-row" onclick="toggleClassif(\''+c.id+'\')">'+
+      '<span class="classif-name"><span class="classif-dot" style="background:'+c.cor+'"></span>'+c.label+'</span>'+
+      '<div class="classif-bar-wrap"><div class="classif-bar" style="width:'+barPct+'%;background:'+c.cor+'"></div></div>'+
+      '<span class="classif-count">'+c.count.toLocaleString('pt-BR')+'</span>'+
+      '<span class="classif-time">'+fmt(c.tpr_med)+' min</span>'+
+      '<span class="classif-time">'+fmt(c.ttf_med)+' min</span></div>'+
+      '<div class="tag-detail" id="detail-'+c.id+'">'+tags+'</div>';
   });
   document.getElementById('classif-list').innerHTML=html;
+  openClassif=null;
 }
+
 function toggleClassif(id){
   var panel=document.getElementById('detail-'+id);
   if(openClassif&&openClassif!==id){var prev=document.getElementById('detail-'+openClassif);if(prev)prev.classList.remove('open');}
@@ -247,9 +310,11 @@ function toggleClassif(id){
   panel.classList.toggle('open',!isOpen);
   openClassif=isOpen?null:id;
 }
+
 function renderEmpreendimentos(){
-  var max=Math.max.apply(null,D.empreendimentos.map(function(e){return e.count;}).concat([1]));
-  var temOcc=D.empreendimentos.some(function(e){return e.taxa_contato!=null;});
+  var d=getD();
+  var max=Math.max.apply(null,d.empreendimentos.map(function(e){return e.count;}).concat([1]));
+  var temOcc=d.empreendimentos.some(function(e){return e.taxa_contato!=null;});
   var head='';
   if(temOcc){
     head='<div class="emp-head">'+
@@ -262,44 +327,91 @@ function renderEmpreendimentos(){
     '</div>';
   }
   var html='';
-  D.empreendimentos.forEach(function(e){
+  d.empreendimentos.forEach(function(e){
     var taxa=e.taxa_contato;
     var taxaHtml='';
     if(taxa!=null){
       var cls=taxa>=60?'taxa-r':taxa>=40?'taxa-a':'taxa-g';
       taxaHtml='<span class="taxa-pill '+cls+'">'+taxa.toFixed(0)+'%</span>';
     }
-    var occHtml=e.occ_pct!=null?'<span class="emp-occ">'+e.occ_pct.toFixed(0)+'%</span>':'<span class="emp-occ">—</span>';
-    html+='<div class="emp-row"><span class="emp-name">'+e.nome+'</span><span class="emp-cluster">'+e.cluster+'</span><div class="emp-bar-wrap"><div class="emp-bar" style="width:'+Math.round(e.count/max*100)+'%"></div></div><span class="emp-count">'+e.count+'</span>'+occHtml+taxaHtml+'</div>';
+    var occHtml=e.occ_pct!=null?'<span class="emp-occ">'+e.occ_pct.toFixed(0)+'%</span>':'<span class="emp-occ">â</span>';
+    html+='<div class="emp-row">'+
+      '<span class="emp-name">'+e.nome+'</span>'+
+      '<span class="emp-cluster">'+e.cluster+'</span>'+
+      '<div class="emp-bar-wrap"><div class="emp-bar" style="width:'+Math.round(e.count/max*100)+'%"></div></div>'+
+      '<span class="emp-count">'+e.count+'</span>'+occHtml+taxaHtml+'</div>';
   });
   document.getElementById('emp-list').innerHTML=head+html;
   var sel=document.getElementById('emp-select');
-  sel.innerHTML=D.empreendimentos.map(function(e){return'<option value="'+e.nome+'">'+e.nome+' ('+e.count+')</option>';}).join('');
+  var prev=sel.value;
+  sel.innerHTML=d.empreendimentos.map(function(e){
+    return'<option value="'+e.nome+'">'+e.nome+' ('+e.count+')</option>';
+  }).join('');
+  if(prev){
+    var found=d.empreendimentos.find(function(e){return e.nome===prev;});
+    if(found) sel.value=prev;
+  }
   renderEmpDetail();
 }
+
 function renderEmpDetail(){
+  var d=getD();
   var nome=document.getElementById('emp-select').value;
-  var emp=null;D.empreendimentos.forEach(function(e){if(e.nome===nome)emp=e;});
+  var emp=null; d.empreendimentos.forEach(function(e){if(e.nome===nome)emp=e;});
   if(!emp||emp.top_motivos.length===0){if(chartEmpDet)chartEmpDet.destroy();return;}
   var labels=emp.top_motivos.map(function(m){return m.label;}).reverse();
   var data=emp.top_motivos.map(function(m){return m.count;}).reverse();
   if(chartEmpDet)chartEmpDet.destroy();
-  chartEmpDet=new Chart(document.getElementById('chart-emp-detail'),{type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:'#FF6A13',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+  chartEmpDet=new Chart(document.getElementById('chart-emp-detail'),{
+    type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:'#FF6A13',borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
 }
+
 function renderClusters(){
+  var d=getD();
   if(chartCluster)chartCluster.destroy();
-  chartCluster=new Chart(document.getElementById('chart-cluster'),{type:'doughnut',data:{labels:D.clusters.map(function(c){return c.nome;}),datasets:[{data:D.clusters.map(function(c){return c.count;}),backgroundColor:['#FF6A13','#4F79E4','#9B59B6','#22C55E','#E67E22','#F59E0B'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:10}}}}});
+  chartCluster=new Chart(document.getElementById('chart-cluster'),{
+    type:'doughnut',
+    data:{labels:d.clusters.map(function(c){return c.nome;}),
+      datasets:[{data:d.clusters.map(function(c){return c.count;}),
+        backgroundColor:['#FF6A13','#4F79E4','#9B59B6','#22C55E','#E67E22','#F59E0B'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:10}}}}
+  });
 }
+
 function renderPrioridade(){
+  var d=getD();
   if(chartPrior)chartPrior.destroy();
-  chartPrior=new Chart(document.getElementById('chart-prior'),{type:'bar',data:{labels:['Alta','Média','Baixa'],datasets:[{data:[D.prioridades.Alta,D.prioridades.Media,D.prioridades.Baixa],backgroundColor:['#EF4444','#F59E0B','#22C55E'],borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}}}}});
+  chartPrior=new Chart(document.getElementById('chart-prior'),{
+    type:'bar',
+    data:{labels:['Alta','MÃ©dia','Baixa'],
+      datasets:[{data:[d.prioridades.Alta,d.prioridades.Media,d.prioridades.Baixa],
+        backgroundColor:['#EF4444','#F59E0B','#22C55E'],borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11}}},
+              y:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}}}}
+  });
 }
+
 function renderAgentes(){
+  var d=getD();
   var html='';
-  D.agentes.forEach(function(a){var tpr=a.tpr_med;var cls=tpr==null?'':tpr<=5?'pill-g':tpr<=15?'pill-a':'pill-r';html+='<tr><td>'+a.nome+'</td><td>'+a.tickets+'</td><td><span class="pill '+cls+'">'+fmt(tpr)+'</span></td><td>'+fmt(a.ttf_med)+'</td><td>'+fmt(a.msgs_med)+'</td></tr>';});
+  d.agentes.forEach(function(a){
+    var tpr=a.tpr_med;
+    var cls=tpr==null?'':tpr<=5?'pill-g':tpr<=15?'pill-a':'pill-r';
+    html+='<tr><td>'+a.nome+'</td><td>'+a.tickets+'</td>'+
+      '<td><span class="pill '+cls+'">'+fmt(tpr)+'</span></td>'+
+      '<td>'+fmt(a.ttf_med)+'</td><td>'+fmt(a.msgs_med)+'</td></tr>';
+  });
   document.getElementById('agentes-tbody').innerHTML=html;
 }
-renderKPIs();renderVolume();renderClassifs();renderEmpreendimentos();renderClusters();renderPrioridade();renderAgentes();setView('semanal');
+
+// Init
+buildPeriodTabs();
+renderAll();
 </script>
 </body>
 </html>
