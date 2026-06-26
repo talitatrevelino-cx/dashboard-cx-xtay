@@ -1,7 +1,7 @@
 """
-processar_dados.py v5 â Dashboard AnalÃ­tica de CX Â· Xtay
-MÃ³dulo reutilizÃ¡vel: processar(rows_droz, rows_occ) â payload dict
-Uso local: python3 processar_dados.py  (lÃª Base de Atendimento.xlsx)
+processar_dados.py v5 — Dashboard Analítica de CX · Xtay
+Módulo reutilizável: processar(rows_droz, rows_occ) → payload dict
+Uso local: python3 processar_dados.py  (lê Base de Atendimento.xlsx)
 """
 import json, re
 from collections import defaultdict, Counter
@@ -15,7 +15,7 @@ TAGS_STATUS_CLIENTE = {
     "esta_hospedado","nao_esta_hospedado",
     "nao_possui_checkin_hoje_nem_futuros","existe_checkin_futuro",
 }
-MAPA_PRIORIDADE = {"prioridade_alta":"Alta","prioridade_media":"MÃ©dia","prioridade_baixa":"Baixa"}
+MAPA_PRIORIDADE = {"prioridade_alta":"Alta","prioridade_media":"Média","prioridade_baixa":"Baixa"}
 
 EMPREEND_KEYWORDS = [
     ("linked batel","Linked Batel"),("linked_batel","Linked Batel"),
@@ -25,6 +25,11 @@ EMPREEND_KEYWORDS = [
     ("simple smart","Simple Smart"),("simple_smart","Simple Smart"),
     ("vila madalena","Vila Madalena"),("vila_madalena","Vila Madalena"),
     ("the bridge","The Bridge"),("the_bridge","The Bridge"),
+    ("the spot one","The Spot One"),("the_spot_one","The Spot One"),("tso","The Spot One"),
+    ("guarulhos","Guarulhos Aeroporto"),
+    ("princess","Princess Curitiba"),
+    ("bk30 largo do arouche","BK30 Largo do Arouche"),("bk30 santana","BK30 Santana"),
+    ("restinga","Restinga"),
     ("ipiranga","Ipiranga"),
     ("upper","Upper West"),("simple","Simple Smart"),
     ("cais","Cais"),("atrium","Atrium"),("fuji","Fuji"),
@@ -32,91 +37,171 @@ EMPREEND_KEYWORDS = [
 ]
 
 CLUSTERS = {
-    "Vila Madalena":"SÃ£o Paulo","Upper West":"SÃ£o Paulo","Ipiranga":"SÃ£o Paulo",
-    "Cais":"Porto Alegre","Simple Smart":"JoÃ£o Pessoa",
+    "Vila Madalena":"São Paulo","Upper West":"São Paulo","Ipiranga":"São Paulo",
+    "BK30 Largo do Arouche":"São Paulo","BK30 Santana":"São Paulo",
+    "Guarulhos Aeroporto":"São Paulo",
+    "Cais":"Porto Alegre","Simple Smart":"João Pessoa",
     "Campos Sales":"Curitiba","PUC":"Curitiba",
+    "Princess Curitiba":"Curitiba",
     "Linked Batel":"Linked Batel",
     "Atrium":"Santa Catarina","Fuji":"Santa Catarina",
     "Soho":"Santa Catarina","Oslo":"Santa Catarina","The Bridge":"Santa Catarina",
+    "The Spot One":"Santa Catarina","Restinga":"Santa Catarina",
 }
 
 CLASSIF_EXACT = {
-    "comercial":"fila_comercial","atendimento-comercial":"fila_comercial",
-    "hospedar":"fila_comercial","morar":"fila_comercial",
-    "comercial_hospedar":"fila_comercial","comercial_morar":"fila_comercial",
-    "checkin_b2b":"fila_comercial","cupom_de_desconto_reservas":"fila_comercial",
-    "reserva_upgrade":"fila_comercial","novos_negocios":"fila_comercial",
-    "novos_negocios_marketing":"fila_comercial",
-    "duvidas_gerais":"duvidas","duvidas_predio":"duvidas",
-    "check_in_duvidas":"duvidas","early_check_in_duvidas":"duvidas",
-    "late_check_out_duvidas":"duvidas","duvidas_gerais_senha_de_acesso":"duvidas",
-    "detalhes_da_acomodacao":"duvidas","informacoes_de_acesso_wi_fi":"duvidas",
-    "estacionamento_duvidas":"duvidas","estacionamento_reserva":"duvidas",
-    "estacionamento_dificuldades_de_acesso":"duvidas","cafe_da_manha":"duvidas",
-    "maleiro":"duvidas","mini_mercado":"duvidas","lavanderia_omo":"duvidas",
-    "duvidas_sobre_limpeza":"duvidas","checkout_duvidas":"duvidas",
-    "confirmacao_de_reserva":"duvidas","duvidas_cadastro_visitante":"duvidas",
-    "cadastro_visitante":"duvidas","feedback_estadia":"duvidas",
-    "suspeita_de_fraude":"duvidas","alteracao_de_datas":"duvidas",
-    "reembolso":"duvidas","solicitacao_de_nota_fiscal":"duvidas",
-    "cancelamento_de_reserva_fora_da_politica":"duvidas",
-    "cancelamento_de_reserva_dentro_da_politica":"duvidas",
-    "alteracao_de_reserva_prorrogacao":"duvidas",
-    "alteracao_de_reserva_inclusao_de_dependente":"duvidas",
-    "alteracao_de_reserva_inclusao_de_acompanhante":"duvidas",
-    "solicitacao_de_early_check_in_cortesia":"duvidas",
-    "solicitacao_de_early_check_in_autorizado_com_custos":"duvidas",
-    "solicitacao_de_early_check_in_sem_disponibilidade":"duvidas",
-    "duvidas_omnibees":"duvidas","reclamacao_da_vista":"duvidas",
-    "duvidas_descarte_lixo":"duvidas","check_in_de_dependente":"duvidas",
-    "inclusao_check_in_de_dependente":"duvidas","alteracao_de_dados_cadastrais":"duvidas",
-    "problemas_com_senha_da_porta":"tech","problemas_com_a_facial":"tech",
-    "check_in_erro_de_verificacao":"tech","check_in_manual_dificuldades_do_hospede":"tech",
-    "check_in_manual_documento_digital":"tech","check_in_reserva_nao_localizada":"tech",
-    "abertura_remota_check_out_vencido":"tech","abertura_remota_dificuldades_do_hospede":"tech",
-    "problemas_com_link_de_pagamento":"tech","problemas_com_pagamento":"tech","checkout_manual":"tech",
-    "ar_condicionado":"operacional","hidraulica":"operacional",
-    "aviso_de_falta_de_energia":"operacional","reclamacao_de_internet":"operacional",
-    "troca_de_apartamento":"operacional","achados_e_perdidos":"operacional",
-    "reposicao_de_amenidades":"operacional","item_faltante_na_unidade":"operacional",
-    "item_danificado_no_apto":"operacional","reclamacao_de_limpeza":"operacional",
-    "reclamacao_de_barulho":"operacional","reclamacao_estadia":"operacional",
-    "limpeza_nao_realizada":"operacional",
-    "solicitacao_de_late_check_out_cortesia":"operacional",
-    "solicitacao_de_late_check_out_autorizado_com_custos":"operacional",
-    "solicitacao_de_late_check_out_sem_disponibilidade":"operacional",
-    "mkt_hospede_frequent":"marketing","hospede_mkt":"marketing",
-    "sem_retorno":"improdutivos","falta_de_interacao":"improdutivos",
-    "teste":"improdutivos","trabalhe_conosco":"improdutivos",
-    "contato_ativo":"contato_ativo","aviso_de_check_out":"contato_ativo",
-    "conversa_operacional":"contato_ativo",
+    # ── Recepção Digital ──────────────────────────────────────
+    "abertura_remota_check_out_vencido":                    "recepcao_digital",
+    "abertura_remota_dificuldades_do_hospede":              "recepcao_digital",
+    "aviso_de_check_out":                                   "recepcao_digital",
+    "check_in_de_dependente":                               "recepcao_digital",
+    "check_in_duvidas":                                     "recepcao_digital",
+    "check_in_manual_dificuldades_do_hospede":              "recepcao_digital",
+    "checkin_b2b":                                          "recepcao_digital",
+    "checkout_duvidas":                                     "recepcao_digital",
+    "early_check_in_duvidas":                               "recepcao_digital",
+    "inclusao_check_in_de_dependente":                      "recepcao_digital",
+    "late_check_out_duvidas":                               "recepcao_digital",
+    "solicitacao_de_early_check_in_autorizado_com_custos":  "recepcao_digital",
+    "solicitacao_de_early_check_in_cortesia":               "recepcao_digital",
+    "solicitacao_de_early_check_in_sem_disponibilidade":    "recepcao_digital",
+    "solicitacao_de_late_check_out_autorizado_com_custos":  "recepcao_digital",
+    "solicitacao_de_late_check_out_cortesia":               "recepcao_digital",
+    "solicitacao_de_late_check_out_sem_disponibilidade":    "recepcao_digital",
+    "troca_de_apartamento":                                 "recepcao_digital",
+    "cadastro_visitante":                                   "recepcao_digital",
+    "duvidas_cadastro_visitante":                           "recepcao_digital",
+    "duvidas_gerais_senha_de_acesso":                       "recepcao_digital",
+    "estacionamento_dificuldades_de_acesso":                "recepcao_digital",
+    "estacionamento_duvidas":                               "recepcao_digital",
+    "estacionamento_reserva":                               "recepcao_digital",
+    # ── Tech ─────────────────────────────────────────────────
+    "check_in_erro_de_verificacao":         "tech",
+    "check_in_manual_documento_digital":    "tech",
+    "check_in_reserva_nao_localizada":      "tech",
+    "checkout_manual":                      "tech",
+    "problemas_com_a_facial":               "tech",
+    "problemas_com_senha_da_porta":         "tech",
+    "problemas_com_link_de_pagamento":      "tech",
+    "problemas_com_pagamento":              "tech",
+    # ── Gestão de Reservas ───────────────────────────────────
+    "alteracao_de_datas":                               "gestao_reservas",
+    "alteracao_de_reserva_inclusao_de_acompanhante":    "gestao_reservas",
+    "alteracao_de_reserva_inclusao_de_dependente":      "gestao_reservas",
+    "alteracao_de_reserva_prorrogacao":                 "gestao_reservas",
+    "cancelamento_de_reserva_dentro_da_politica":       "gestao_reservas",
+    "cancelamento_de_reserva_fora_da_politica":         "gestao_reservas",
+    "cupom_de_desconto_reservas":                       "gestao_reservas",
+    "reserva_upgrade":                                  "gestao_reservas",
+    "reembolso":                                        "gestao_reservas",
+    "suspeita_de_fraude":                               "gestao_reservas",
+    "alteracao_de_dados_cadastrais":                    "gestao_reservas",
+    # ── Comercial ────────────────────────────────────────────
+    "atendimento-comercial":                        "comercial",
+    "comercial":                                    "comercial",
+    "comercial_hospedar":                           "comercial",
+    "comercial_morar":                              "comercial",
+    "confirmacao_de_reserva":                       "comercial",
+    "cotacao_orcamento_venda_finalizada":            "comercial",
+    "cotacao_orcamento_venda_nao_finalizada":        "comercial",
+    "duvidas_omnibees":                             ["comercial","duvidas_gerais"],
+    "hospedar":                                     "comercial",
+    "mensalista_agendamento_de_limpeza_quinzenal":  "comercial",
+    "mensalista_contrato_venda":                    "comercial",
+    "mensalista_cotacao_e_duvidas":                 "comercial",
+    "mensalista_solicitacao_de_link_de_pagamento":  "comercial",
+    "morar":                                        "comercial",
+    "novos_negocios":                               "comercial",
+    "novos_negocios_marketing":                     "comercial",
+    # ── Dúvidas Gerais ───────────────────────────────────────
+    "informacoes_de_acesso_wi_fi":  "duvidas_gerais",
+    "maleiro":                      "duvidas_gerais",
+    "detalhes_da_acomodacao":       "duvidas_gerais",
+    "duvidas_descarte_lixo":        "duvidas_gerais",
+    "duvidas_gerais":               "duvidas_gerais",
+    "duvidas_predio":               "duvidas_gerais",
+    "duvidas_sobre_limpeza":        "duvidas_gerais",
+    # ── Serviços Solicitados ─────────────────────────────────
+    "solicitacao_de_nota_fiscal":               "servicos",
+    "solicitacao_de_servico_item_extra":        "servicos",
+    "solicitacao_de_servico_limpeza":           "servicos",
+    "solicitacao_de_servico_taxa_pet":          "servicos",
+    "solicitacao_de_servico_troca_de_enxoval":  "servicos",
+    "solicitacao_de_servico_troca_de_toalhas":  "servicos",
+    "reposicao_de_amenidades":                  "servicos",
+    "mini_mercado":                             "servicos",
+    "lavanderia_omo":                           "servicos",
+    "cafe_da_manha":                            "servicos",
+    # ── Manutenção (tag mãe também compõe Serviços) ──────────
+    "solicitacao_de_servico_manutencao":    ["servicos","manutencao"],
+    "ar_condicionado":                      "manutencao",
+    "hidraulica":                           "manutencao",
+    "item_danificado_no_apto":              ["manutencao","operacional"],
+    "item_faltante_na_unidade":             ["manutencao","operacional"],
+    "aviso_de_falta_de_energia":            ["manutencao","operacional"],
+    # ── Problemas com Limpeza ────────────────────────────────
+    "problemas_com_limpeza":    "limpeza",
+    "reclamacao_de_limpeza":    "limpeza",
+    "limpeza_nao_realizada":    "limpeza",
+    # ── Gestão Operacional ───────────────────────────────────
+    "reclamacao_da_vista":      "operacional",
+    "reclamacao_de_barulho":    "operacional",
+    "reclamacao_de_internet":   "operacional",
+    "reclamacao_estadia":       "operacional",
+    "feedback_estadia":         "operacional",
+    "achados_e_perdidos":       "operacional",
+    "conversa_operacional":     "operacional",
+    # ── Marketing e Relacionamento ───────────────────────────
+    "mkt_hospede_frequent": "marketing",
+    "hospede_mkt":          "marketing",
+    "trabalhe_conosco":     "marketing",
+    # ── Contato Ativo ────────────────────────────────────────
+    "contato_ativo":        "contato_ativo",
+    # ── Improdutivos ─────────────────────────────────────────
+    "falta_de_interacao":   "improdutivos",
+    "sem_retorno":          "improdutivos",
+    "teste":                "improdutivos",
 }
 
 CLASSIF_PREFIXOS = [
-    ("mensalista_","fila_comercial"),("cotacao_orcamento_","fila_comercial"),
-    ("novos_negocios","fila_comercial"),("solicitacao_de_servico_","operacional"),
-    ("abertura_remota_","tech"),("check_in_manual_","tech"),
-    ("cancelamento_de_reserva_","duvidas"),("alteracao_de_reserva_","duvidas"),
-    ("solicitacao_de_early_check_in_","duvidas"),("solicitacao_de_late_check_out_","operacional"),
+    ("mensalista_",                     "comercial"),
+    ("cotacao_orcamento_",              "comercial"),
+    ("novos_negocios",                  "comercial"),
+    ("cancelamento_de_reserva_",        "gestao_reservas"),
+    ("alteracao_de_reserva_",           "gestao_reservas"),
+    ("solicitacao_de_early_check_in_",  "recepcao_digital"),
+    ("solicitacao_de_late_check_out_",  "recepcao_digital"),
+    ("abertura_remota_",                "recepcao_digital"),
+    ("solicitacao_de_servico_",         "servicos"),
 ]
 
 CLASSIF_META = {
-    "fila_comercial":{"label":"Fila comercial","cor":"#FF6A13"},
-    "duvidas":{"label":"DÃºvidas e solicitaÃ§Ãµes gerais","cor":"#4F79E4"},
-    "tech":{"label":"Tech","cor":"#9B59B6"},
-    "operacional":{"label":"SolicitaÃ§Ãµes operacionais","cor":"#E67E22"},
-    "marketing":{"label":"Marketing","cor":"#27AE60"},
-    "improdutivos":{"label":"Improdutivos","cor":"#95A5A6"},
-    "contato_ativo":{"label":"Contato ativo","cor":"#1ABC9C"},
+    "recepcao_digital":  {"label":"Recepção Digital",         "cor":"#2196F3"},
+    "tech":              {"label":"Tech",                      "cor":"#9B59B6"},
+    "gestao_reservas":   {"label":"Gestão de Reservas",       "cor":"#FF5722"},
+    "comercial":         {"label":"Comercial",                 "cor":"#FF6A13"},
+    "duvidas_gerais":    {"label":"Dúvidas Gerais",            "cor":"#4F79E4"},
+    "servicos":          {"label":"Serviços Solicitados",      "cor":"#00BCD4"},
+    "manutencao":        {"label":"Manutenção",                "cor":"#795548"},
+    "limpeza":           {"label":"Problemas com Limpeza",     "cor":"#E91E63"},
+    "operacional":       {"label":"Gestão Operacional",        "cor":"#E67E22"},
+    "marketing":         {"label":"Marketing e Relacionamento","cor":"#27AE60"},
+    "contato_ativo":     {"label":"Contato Ativo",             "cor":"#1ABC9C"},
+    "improdutivos":      {"label":"Improdutivos",              "cor":"#95A5A6"},
 }
-CLASSIF_ORDER = ["fila_comercial","duvidas","tech","operacional","marketing","improdutivos","contato_ativo"]
+CLASSIF_ORDER = [
+    "recepcao_digital","tech","gestao_reservas","comercial","duvidas_gerais",
+    "servicos","manutencao","limpeza","operacional","marketing","contato_ativo","improdutivos",
+]
 
 EMPREEND_ORDER = [
-    "Vila Madalena","Upper West","Ipiranga",
-    "Cais","PUC","Campos Sales","Linked Batel",
-    "Atrium","Fuji","Soho","Oslo","The Bridge","Simple Smart",
+    "Vila Madalena","Upper West","BK30 Largo do Arouche","BK30 Santana",
+    "Guarulhos Aeroporto","Ipiranga",
+    "Cais","PUC","Campos Sales","Princess Curitiba","Linked Batel",
+    "Atrium","Fuji","Soho","Oslo","The Bridge","The Spot One","Restinga",
+    "Simple Smart",
 ]
-CLUSTER_ORDER = ["SÃ£o Paulo","Curitiba","Linked Batel","Porto Alegre","Santa Catarina","JoÃ£o Pessoa"]
+CLUSTER_ORDER = ["São Paulo","Curitiba","Linked Batel","Porto Alegre","Santa Catarina","João Pessoa"]
 
 NM = {"01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun",
       "07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"}
@@ -130,70 +215,70 @@ MES_NUM = {
 }
 
 LABELS = {
-    "check_in_duvidas":"Check-in â dÃºvidas","duvidas_gerais":"DÃºvidas gerais",
-    "sem_retorno":"Sem retorno","check_in_manual_dificuldades_do_hospede":"Check-in manual â dificuldades",
-    "alteracao_de_reserva_prorrogacao":"ProrrogaÃ§Ã£o de reserva",
+    "check_in_duvidas":"Check-in — dúvidas","duvidas_gerais":"Dúvidas gerais",
+    "sem_retorno":"Sem retorno","check_in_manual_dificuldades_do_hospede":"Check-in manual — dificuldades",
+    "alteracao_de_reserva_prorrogacao":"Prorrogação de reserva",
     "problemas_com_senha_da_porta":"Problemas com senha da porta",
     "solicitacao_de_early_check_in_cortesia":"Early check-in (cortesia)",
-    "solicitacao_de_servico_manutencao":"ManutenÃ§Ã£o",
-    "early_check_in_duvidas":"Early check-in â dÃºvidas",
-    "estacionamento_duvidas":"Estacionamento â dÃºvidas",
+    "solicitacao_de_servico_manutencao":"Manutenção",
+    "early_check_in_duvidas":"Early check-in — dúvidas",
+    "estacionamento_duvidas":"Estacionamento — dúvidas",
     "solicitacao_de_late_check_out_cortesia":"Late check-out (cortesia)",
     "troca_de_apartamento":"Troca de apartamento",
-    "cotacao_orcamento_venda_nao_finalizada":"CotaÃ§Ã£o nÃ£o finalizada",
-    "cotacao_orcamento_venda_finalizada":"CotaÃ§Ã£o finalizada",
-    "inclusao_check_in_de_dependente":"InclusÃ£o dependente no check-in",
-    "duvidas_gerais_senha_de_acesso":"DÃºvidas senha de acesso",
+    "cotacao_orcamento_venda_nao_finalizada":"Cotação não finalizada",
+    "cotacao_orcamento_venda_finalizada":"Cotação finalizada",
+    "inclusao_check_in_de_dependente":"Inclusão dependente no check-in",
+    "duvidas_gerais_senha_de_acesso":"Dúvidas senha de acesso",
     "problemas_com_a_facial":"Problemas com facial",
-    "mensalista_agendamento_de_limpeza_quinzenal":"Mensalista â limpeza quinzenal",
+    "mensalista_agendamento_de_limpeza_quinzenal":"Mensalista — limpeza quinzenal",
     "achados_e_perdidos":"Achados e perdidos","solicitacao_de_nota_fiscal":"Nota fiscal",
     "solicitacao_de_servico_item_extra":"Item extra",
-    "check_in_reserva_nao_localizada":"Check-in â reserva nÃ£o localizada",
-    "confirmacao_de_reserva":"ConfirmaÃ§Ã£o de reserva",
-    "solicitacao_de_servico_limpeza":"SolicitaÃ§Ã£o de limpeza",
-    "reclamacao_de_limpeza":"ReclamaÃ§Ã£o de limpeza",
-    "late_check_out_duvidas":"Late check-out â dÃºvidas",
-    "mensalista_cotacao_e_duvidas":"Mensalista â cotaÃ§Ã£o",
+    "check_in_reserva_nao_localizada":"Check-in — reserva não localizada",
+    "confirmacao_de_reserva":"Confirmação de reserva",
+    "solicitacao_de_servico_limpeza":"Solicitação de limpeza",
+    "reclamacao_de_limpeza":"Reclamação de limpeza",
+    "late_check_out_duvidas":"Late check-out — dúvidas",
+    "mensalista_cotacao_e_duvidas":"Mensalista — cotação",
     "check_in_de_dependente":"Check-in de dependente",
-    "cafe_da_manha":"CafÃ© da manhÃ£","duvidas_sobre_limpeza":"DÃºvidas sobre limpeza",
-    "alteracao_de_datas":"AlteraÃ§Ã£o de datas",
-    "cancelamento_de_reserva_fora_da_politica":"Cancelamento fora da polÃ­tica",
-    "cancelamento_de_reserva_dentro_da_politica":"Cancelamento dentro da polÃ­tica",
+    "cafe_da_manha":"Café da manhã","duvidas_sobre_limpeza":"Dúvidas sobre limpeza",
+    "alteracao_de_datas":"Alteração de datas",
+    "cancelamento_de_reserva_fora_da_politica":"Cancelamento fora da política",
+    "cancelamento_de_reserva_dentro_da_politica":"Cancelamento dentro da política",
     "solicitacao_de_servico_troca_de_toalhas":"Troca de toalhas",
     "solicitacao_de_early_check_in_autorizado_com_custos":"Early check-in (com custo)",
     "solicitacao_de_late_check_out_autorizado_com_custos":"Late check-out (com custo)",
     "problemas_com_pagamento":"Problemas com pagamento",
-    "detalhes_da_acomodacao":"DÃºvidas sobre acomodaÃ§Ã£o",
+    "detalhes_da_acomodacao":"Dúvidas sobre acomodação",
     "problemas_com_link_de_pagamento":"Problemas com link de pagamento",
-    "reembolso":"Reembolso","estacionamento_dificuldades_de_acesso":"Estacionamento â acesso",
-    "reclamacao_de_internet":"ReclamaÃ§Ã£o de internet","item_danificado_no_apto":"Item danificado",
-    "reclamacao_estadia":"ReclamaÃ§Ã£o de estadia","comercial":"Comercial",
+    "reembolso":"Reembolso","estacionamento_dificuldades_de_acesso":"Estacionamento — acesso",
+    "reclamacao_de_internet":"Reclamação de internet","item_danificado_no_apto":"Item danificado",
+    "reclamacao_estadia":"Reclamação de estadia","comercial":"Comercial",
     "atendimento-comercial":"Atendimento comercial","hospedar":"Hospedar","morar":"Morar",
-    "contato_ativo":"Contato ativo","falta_de_interacao":"Falta de interaÃ§Ã£o",
+    "contato_ativo":"Contato ativo","falta_de_interacao":"Falta de interação",
     "aviso_de_check_out":"Aviso de check-out","checkout_manual":"Checkout manual",
-    "check_in_erro_de_verificacao":"Check-in â erro de verificaÃ§Ã£o",
-    "check_in_manual_documento_digital":"Check-in manual â doc digital",
+    "check_in_erro_de_verificacao":"Check-in — erro de verificação",
+    "check_in_manual_documento_digital":"Check-in manual — doc digital",
     "suspeita_de_fraude":"Suspeita de fraude",
     "abertura_remota_check_out_vencido":"Abertura remota (check-out vencido)",
-    "abertura_remota_dificuldades_do_hospede":"Abertura remota â dificuldades",
+    "abertura_remota_dificuldades_do_hospede":"Abertura remota — dificuldades",
     "solicitacao_de_early_check_in_sem_disponibilidade":"Early check-in (sem disponibilidade)",
-    "estacionamento_reserva":"Estacionamento â reserva","maleiro":"Maleiro",
-    "mensalista_solicitacao_de_link_de_pagamento":"Mensalista â link de pagamento",
+    "estacionamento_reserva":"Estacionamento — reserva","maleiro":"Maleiro",
+    "mensalista_solicitacao_de_link_de_pagamento":"Mensalista — link de pagamento",
     "item_faltante_na_unidade":"Item faltante",
     "solicitacao_de_servico_troca_de_enxoval":"Troca de enxoval",
-    "reposicao_de_amenidades":"ReposiÃ§Ã£o de amenidades",
-    "reclamacao_de_barulho":"ReclamaÃ§Ã£o de barulho","limpeza_nao_realizada":"Limpeza nÃ£o realizada",
-    "ar_condicionado":"Ar condicionado","hidraulica":"HidrÃ¡ulica",
+    "reposicao_de_amenidades":"Reposição de amenidades",
+    "reclamacao_de_barulho":"Reclamação de barulho","limpeza_nao_realizada":"Limpeza não realizada",
+    "ar_condicionado":"Ar condicionado","hidraulica":"Hidráulica",
     "aviso_de_falta_de_energia":"Falta de energia","feedback_estadia":"Feedback de estadia",
-    "mkt_hospede_frequent":"HÃ³spede frequente","novos_negocios":"Novos negÃ³cios",
+    "mkt_hospede_frequent":"Hóspede frequente","novos_negocios":"Novos negócios",
     "trabalhe_conosco":"Trabalhe conosco","conversa_operacional":"Conversa operacional",
     "teste":"Teste","checkin_b2b":"Check-in B2B","reserva_upgrade":"Upgrade de reserva",
-    "cupom_de_desconto_reservas":"Cupom de desconto","mensalista_contrato_venda":"Mensalista â contrato",
+    "cupom_de_desconto_reservas":"Cupom de desconto","mensalista_contrato_venda":"Mensalista — contrato",
     "solicitacao_de_late_check_out_sem_disponibilidade":"Late check-out (sem disponibilidade)",
-    "duvidas_omnibees":"DÃºvidas Omnibees","alteracao_de_dados_cadastrais":"AlteraÃ§Ã£o de dados cadastrais",
+    "duvidas_omnibees":"Dúvidas Omnibees","alteracao_de_dados_cadastrais":"Alteração de dados cadastrais",
 }
 
-# ââ FunÃ§Ãµes auxiliares âââââââââââââââââââââââââââââââââââââââ
+# ── Funções auxiliares ───────────────────────────────────────
 
 def lbl(tag):
     t = tag.lower().strip()
@@ -239,13 +324,16 @@ def classify(tag):
     cids = set()
     for p, cid in CLASSIF_PREFIXOS:
         if t.startswith(p): cids.add(cid)
-    if t in CLASSIF_EXACT: cids.add(CLASSIF_EXACT[t])
+    if t in CLASSIF_EXACT:
+        val = CLASSIF_EXACT[t]
+        if isinstance(val, list): cids.update(val)
+        else: cids.add(val)
     return cids
 
 def _safe_float(val):
     v = _v(val)
     if not v: return 0.0
-    # Remove %, R$, espaÃ§os nÃ£o-separÃ¡veis antes de converter
+    # Remove %, R$, espaços não-separáveis antes de converter
     cleaned = str(v).replace(',','.').replace('%','').replace('R$','').replace('\xa0','').strip()
     try: return float(cleaned)
     except: return 0.0
@@ -258,16 +346,16 @@ def _safe_int(val):
     except: return 0
 
 def _parse_mes_key(val, ano_base="2026"):
-    """Normaliza label de mÃªs para YYYY-MM. Ex: 'Abril' â '2026-04'"""
+    """Normaliza label de mês para YYYY-MM. Ex: 'Abril' → '2026-04'"""
     s = str(val or "").strip().lower()
     if not s: return None
-    # JÃ¡ no formato YYYY-MM
+    # Já no formato YYYY-MM
     m = re.match(r'(\d{4})-(\d{2})', s)
     if m: return f"{m.group(1)}-{m.group(2)}"
     # Formato MM/YYYY ou MM-YYYY
     m = re.match(r'(\d{1,2})[/-](\d{4})', s)
     if m: return f"{m.group(2)}-{m.group(1).zfill(2)}"
-    # Nome do mÃªs (com ou sem ano)
+    # Nome do mês (com ou sem ano)
     for nome, num in MES_NUM.items():
         if s.startswith(nome):
             yr_m = re.search(r'\d{2,4}', s[len(nome):])
@@ -277,7 +365,7 @@ def _parse_mes_key(val, ano_base="2026"):
     return None
 
 def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
-    """Agrega mÃ©tricas para um conjunto de ticket IDs."""
+    """Agrega métricas para um conjunto de ticket IDs."""
     cc = defaultdict(int)
     ctpr = defaultdict(list); cttf = defaultdict(list); ctags = defaultdict(Counter)
     emp_c = Counter(); emp_m = defaultdict(Counter); clu_c = Counter()
@@ -345,10 +433,10 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
         "empreendimentos": emps_lista,
         "agentes": agentes,
         "clusters": clusters_lista,
-        "prioridades": {"Alta":pri.get("Alta",0),"Media":pri.get("MÃ©dia",0),"Baixa":pri.get("Baixa",0)},
+        "prioridades": {"Alta":pri.get("Alta",0),"Media":pri.get("Média",0),"Baixa":pri.get("Baixa",0)},
     }
 
-# ââ FunÃ§Ã£o principal âââââââââââââââââââââââââââââââââââââââââ
+# ── Função principal ─────────────────────────────────────────
 
 def processar(rows_droz, rows_occ=None):
     """
@@ -375,7 +463,7 @@ def processar(rows_droz, rows_occ=None):
             }
         if tag: ticket_tags[tid].append(tag.strip())
 
-    # 2. Volume por perÃ­odo (para construÃ§Ã£o de keys)
+    # 2. Volume por período (para construção de keys)
     vd = Counter(); vs = Counter(); vm = Counter()
     for tid, base in ticket_base.items():
         dt = base["data"]
@@ -385,9 +473,6 @@ def processar(rows_droz, rows_occ=None):
             vs[sem_lbl(dt)]+=1
 
     # 3. Leitura de OCC
-    # Estrutura da aba "Reservas e OCC" (com coluna MÃªs em A):
-    #   col A (0): mÃªs, col B (1): empreendimento
-    #   col E (4): un. ocupadas, col G (6): faturamento, col H (7): occ%
     occ_raw_data = defaultdict(dict)
     if rows_occ:
         for row in rows_occ:
@@ -425,7 +510,7 @@ def processar(rows_droz, rows_occ=None):
             "faturamento": round(v["faturamento"],2),
         }
 
-    # 6. MÃ©tricas globais
+    # 6. Métricas globais
     all_tids = list(ticket_base.keys())
     gm = _build_metrics(all_tids, ticket_base, ticket_tags, occ_agg)
 
@@ -439,7 +524,7 @@ def processar(rows_droz, rows_occ=None):
     sems = [{"d":w,"c":vs[w]} for w in seen_w]
     meses_vol = [{"d":NM.get(m[5:7],m[5:7]),"c":c,"k":m} for m,c in sorted(vm.items())]
 
-    # 8. MÃ©tricas por mÃªs
+    # 8. Métricas por mês
     por_mes = {}
     for mes_key in sorted(vm.keys()):
         month_tids = [tid for tid, base in ticket_base.items()
@@ -462,7 +547,7 @@ def processar(rows_droz, rows_occ=None):
     if pi == pf:
         periodo = NM.get(pi[5:7],"") + " " + pi[:4] if pi else ""
     else:
-        periodo = NM.get(pi[5:7],"") + " â " + NM.get(pf[5:7],"") + " " + pf[:4] if pi else ""
+        periodo = NM.get(pi[5:7],"") + " – " + NM.get(pf[5:7],"") + " " + pf[:4] if pi else ""
 
     return {
         "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M"),
@@ -484,7 +569,7 @@ def processar(rows_droz, rows_occ=None):
         "por_mes": por_mes,
     }
 
-# ââ Uso local ââââââââââââââââââââââââââââââââââââââââââââââââ
+# ── Uso local ────────────────────────────────────────────────
 
 if __name__ == "__main__":
     import openpyxl
@@ -500,16 +585,16 @@ if __name__ == "__main__":
     print("Aba de atendimentos:", sheet_droz.title)
 
     ws_occ = wb["Reservas e OCC"] if "Reservas e OCC" in wb.sheetnames else None
-    print("Aba de OCC:", ws_occ.title if ws_occ else "nÃ£o encontrada")
+    print("Aba de OCC:", ws_occ.title if ws_occ else "não encontrada")
 
     rows_droz = list(sheet_droz.iter_rows(min_row=2, values_only=True))
     rows_occ  = list(ws_occ.iter_rows(min_row=2, values_only=True)) if ws_occ else None
 
     payload = processar(rows_droz, rows_occ)
-    print("Tickets Ãºnicos:", payload["total"])
+    print("Tickets únicos:", payload["total"])
     print("TPR med:", payload["tpr_med"], "| TTF med:", payload["ttf_med"])
     print("OCC meses:", list(payload["occ_meses"].keys()))
-    print("Por mÃªs:", {k: payload["por_mes"][k]["total"] for k in payload["por_mes"]})
+    print("Por mês:", {k: payload["por_mes"][k]["total"] for k in payload["por_mes"]})
 
     with open(ARQUIVO_TEMPLATE,"r",encoding="utf-8") as f:
         html = f.read()
