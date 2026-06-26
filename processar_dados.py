@@ -1,9 +1,9 @@
 """
-processar_dados.py v4 — Dashboard Analítica de CX · Xtay
-Módulo reutilizável: processar(rows_droz, rows_occ) → payload dict
-Uso local: python3 processar_dados.py  (lê Base de Atendimento.xlsx)
+processar_dados.py v5 â Dashboard AnalÃ­tica de CX Â· Xtay
+MÃ³dulo reutilizÃ¡vel: processar(rows_droz, rows_occ) â payload dict
+Uso local: python3 processar_dados.py  (lÃª Base de Atendimento.xlsx)
 """
-import json
+import json, re
 from collections import defaultdict, Counter
 from datetime import datetime, timedelta
 
@@ -15,7 +15,7 @@ TAGS_STATUS_CLIENTE = {
     "esta_hospedado","nao_esta_hospedado",
     "nao_possui_checkin_hoje_nem_futuros","existe_checkin_futuro",
 }
-MAPA_PRIORIDADE = {"prioridade_alta":"Alta","prioridade_media":"Média","prioridade_baixa":"Baixa"}
+MAPA_PRIORIDADE = {"prioridade_alta":"Alta","prioridade_media":"MÃ©dia","prioridade_baixa":"Baixa"}
 
 EMPREEND_KEYWORDS = [
     ("linked batel","Linked Batel"),("linked_batel","Linked Batel"),
@@ -32,8 +32,8 @@ EMPREEND_KEYWORDS = [
 ]
 
 CLUSTERS = {
-    "Vila Madalena":"São Paulo","Upper West":"São Paulo","Ipiranga":"São Paulo",
-    "Cais":"Porto Alegre","Simple Smart":"João Pessoa",
+    "Vila Madalena":"SÃ£o Paulo","Upper West":"SÃ£o Paulo","Ipiranga":"SÃ£o Paulo",
+    "Cais":"Porto Alegre","Simple Smart":"JoÃ£o Pessoa",
     "Campos Sales":"Curitiba","PUC":"Curitiba",
     "Linked Batel":"Linked Batel",
     "Atrium":"Santa Catarina","Fuji":"Santa Catarina",
@@ -102,9 +102,9 @@ CLASSIF_PREFIXOS = [
 
 CLASSIF_META = {
     "fila_comercial":{"label":"Fila comercial","cor":"#FF6A13"},
-    "duvidas":{"label":"Dúvidas e solicitações gerais","cor":"#4F79E4"},
+    "duvidas":{"label":"DÃºvidas e solicitaÃ§Ãµes gerais","cor":"#4F79E4"},
     "tech":{"label":"Tech","cor":"#9B59B6"},
-    "operacional":{"label":"Solicitações operacionais","cor":"#E67E22"},
+    "operacional":{"label":"SolicitaÃ§Ãµes operacionais","cor":"#E67E22"},
     "marketing":{"label":"Marketing","cor":"#27AE60"},
     "improdutivos":{"label":"Improdutivos","cor":"#95A5A6"},
     "contato_ativo":{"label":"Contato ativo","cor":"#1ABC9C"},
@@ -116,80 +116,90 @@ EMPREEND_ORDER = [
     "Cais","PUC","Campos Sales","Linked Batel",
     "Atrium","Fuji","Soho","Oslo","The Bridge","Simple Smart",
 ]
-CLUSTER_ORDER = ["São Paulo","Curitiba","Linked Batel","Porto Alegre","Santa Catarina","João Pessoa"]
+CLUSTER_ORDER = ["SÃ£o Paulo","Curitiba","Linked Batel","Porto Alegre","Santa Catarina","JoÃ£o Pessoa"]
+
+NM = {"01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun",
+      "07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"}
+
+MES_NUM = {
+    "jan":"01","fev":"02","mar":"03","abr":"04","mai":"05","jun":"06",
+    "jul":"07","ago":"08","set":"09","out":"10","nov":"11","dez":"12",
+    "janeiro":"01","fevereiro":"02","marco":"03","abril":"04","maio":"05",
+    "junho":"06","julho":"07","agosto":"08","setembro":"09","outubro":"10",
+    "novembro":"11","dezembro":"12",
+}
 
 LABELS = {
-    "check_in_duvidas":"Check-in — dúvidas","duvidas_gerais":"Dúvidas gerais",
-    "sem_retorno":"Sem retorno","check_in_manual_dificuldades_do_hospede":"Check-in manual — dificuldades",
-    "alteracao_de_reserva_prorrogacao":"Prorrogação de reserva",
+    "check_in_duvidas":"Check-in â dÃºvidas","duvidas_gerais":"DÃºvidas gerais",
+    "sem_retorno":"Sem retorno","check_in_manual_dificuldades_do_hospede":"Check-in manual â dificuldades",
+    "alteracao_de_reserva_prorrogacao":"ProrrogaÃ§Ã£o de reserva",
     "problemas_com_senha_da_porta":"Problemas com senha da porta",
     "solicitacao_de_early_check_in_cortesia":"Early check-in (cortesia)",
-    "solicitacao_de_servico_manutencao":"Manutenção",
-    "early_check_in_duvidas":"Early check-in — dúvidas",
-    "estacionamento_duvidas":"Estacionamento — dúvidas",
+    "solicitacao_de_servico_manutencao":"ManutenÃ§Ã£o",
+    "early_check_in_duvidas":"Early check-in â dÃºvidas",
+    "estacionamento_duvidas":"Estacionamento â dÃºvidas",
     "solicitacao_de_late_check_out_cortesia":"Late check-out (cortesia)",
     "troca_de_apartamento":"Troca de apartamento",
-    "cotacao_orcamento_venda_nao_finalizada":"Cotação não finalizada",
-    "cotacao_orcamento_venda_finalizada":"Cotação finalizada",
-    "inclusao_check_in_de_dependente":"Inclusão dependente no check-in",
-    "duvidas_gerais_senha_de_acesso":"Dúvidas senha de acesso",
+    "cotacao_orcamento_venda_nao_finalizada":"CotaÃ§Ã£o nÃ£o finalizada",
+    "cotacao_orcamento_venda_finalizada":"CotaÃ§Ã£o finalizada",
+    "inclusao_check_in_de_dependente":"InclusÃ£o dependente no check-in",
+    "duvidas_gerais_senha_de_acesso":"DÃºvidas senha de acesso",
     "problemas_com_a_facial":"Problemas com facial",
-    "mensalista_agendamento_de_limpeza_quinzenal":"Mensalista — limpeza quinzenal",
+    "mensalista_agendamento_de_limpeza_quinzenal":"Mensalista â limpeza quinzenal",
     "achados_e_perdidos":"Achados e perdidos","solicitacao_de_nota_fiscal":"Nota fiscal",
     "solicitacao_de_servico_item_extra":"Item extra",
-    "check_in_reserva_nao_localizada":"Check-in — reserva não localizada",
-    "confirmacao_de_reserva":"Confirmação de reserva",
-    "solicitacao_de_servico_limpeza":"Solicitação de limpeza",
-    "reclamacao_de_limpeza":"Reclamação de limpeza",
-    "late_check_out_duvidas":"Late check-out — dúvidas",
-    "mensalista_cotacao_e_duvidas":"Mensalista — cotação",
+    "check_in_reserva_nao_localizada":"Check-in â reserva nÃ£o localizada",
+    "confirmacao_de_reserva":"ConfirmaÃ§Ã£o de reserva",
+    "solicitacao_de_servico_limpeza":"SolicitaÃ§Ã£o de limpeza",
+    "reclamacao_de_limpeza":"ReclamaÃ§Ã£o de limpeza",
+    "late_check_out_duvidas":"Late check-out â dÃºvidas",
+    "mensalista_cotacao_e_duvidas":"Mensalista â cotaÃ§Ã£o",
     "check_in_de_dependente":"Check-in de dependente",
-    "cafe_da_manha":"Café da manhã","duvidas_sobre_limpeza":"Dúvidas sobre limpeza",
-    "alteracao_de_datas":"Alteração de datas",
-    "cancelamento_de_reserva_fora_da_politica":"Cancelamento fora da política",
-    "cancelamento_de_reserva_dentro_da_politica":"Cancelamento dentro da política",
+    "cafe_da_manha":"CafÃ© da manhÃ£","duvidas_sobre_limpeza":"DÃºvidas sobre limpeza",
+    "alteracao_de_datas":"AlteraÃ§Ã£o de datas",
+    "cancelamento_de_reserva_fora_da_politica":"Cancelamento fora da polÃ­tica",
+    "cancelamento_de_reserva_dentro_da_politica":"Cancelamento dentro da polÃ­tica",
     "solicitacao_de_servico_troca_de_toalhas":"Troca de toalhas",
     "solicitacao_de_early_check_in_autorizado_com_custos":"Early check-in (com custo)",
     "solicitacao_de_late_check_out_autorizado_com_custos":"Late check-out (com custo)",
     "problemas_com_pagamento":"Problemas com pagamento",
-    "detalhes_da_acomodacao":"Dúvidas sobre acomodação",
+    "detalhes_da_acomodacao":"DÃºvidas sobre acomodaÃ§Ã£o",
     "problemas_com_link_de_pagamento":"Problemas com link de pagamento",
-    "reembolso":"Reembolso","estacionamento_dificuldades_de_acesso":"Estacionamento — acesso",
-    "reclamacao_de_internet":"Reclamação de internet","item_danificado_no_apto":"Item danificado",
-    "reclamacao_estadia":"Reclamação de estadia","comercial":"Comercial",
+    "reembolso":"Reembolso","estacionamento_dificuldades_de_acesso":"Estacionamento â acesso",
+    "reclamacao_de_internet":"ReclamaÃ§Ã£o de internet","item_danificado_no_apto":"Item danificado",
+    "reclamacao_estadia":"ReclamaÃ§Ã£o de estadia","comercial":"Comercial",
     "atendimento-comercial":"Atendimento comercial","hospedar":"Hospedar","morar":"Morar",
-    "contato_ativo":"Contato ativo","falta_de_interacao":"Falta de interação",
+    "contato_ativo":"Contato ativo","falta_de_interacao":"Falta de interaÃ§Ã£o",
     "aviso_de_check_out":"Aviso de check-out","checkout_manual":"Checkout manual",
-    "check_in_erro_de_verificacao":"Check-in — erro de verificação",
-    "check_in_manual_documento_digital":"Check-in manual — doc digital",
+    "check_in_erro_de_verificacao":"Check-in â erro de verificaÃ§Ã£o",
+    "check_in_manual_documento_digital":"Check-in manual â doc digital",
     "suspeita_de_fraude":"Suspeita de fraude",
     "abertura_remota_check_out_vencido":"Abertura remota (check-out vencido)",
-    "abertura_remota_dificuldades_do_hospede":"Abertura remota — dificuldades",
+    "abertura_remota_dificuldades_do_hospede":"Abertura remota â dificuldades",
     "solicitacao_de_early_check_in_sem_disponibilidade":"Early check-in (sem disponibilidade)",
-    "estacionamento_reserva":"Estacionamento — reserva","maleiro":"Maleiro",
-    "mensalista_solicitacao_de_link_de_pagamento":"Mensalista — link de pagamento",
+    "estacionamento_reserva":"Estacionamento â reserva","maleiro":"Maleiro",
+    "mensalista_solicitacao_de_link_de_pagamento":"Mensalista â link de pagamento",
     "item_faltante_na_unidade":"Item faltante",
     "solicitacao_de_servico_troca_de_enxoval":"Troca de enxoval",
-    "reposicao_de_amenidades":"Reposição de amenidades",
-    "reclamacao_de_barulho":"Reclamação de barulho","limpeza_nao_realizada":"Limpeza não realizada",
-    "ar_condicionado":"Ar condicionado","hidraulica":"Hidráulica",
+    "reposicao_de_amenidades":"ReposiÃ§Ã£o de amenidades",
+    "reclamacao_de_barulho":"ReclamaÃ§Ã£o de barulho","limpeza_nao_realizada":"Limpeza nÃ£o realizada",
+    "ar_condicionado":"Ar condicionado","hidraulica":"HidrÃ¡ulica",
     "aviso_de_falta_de_energia":"Falta de energia","feedback_estadia":"Feedback de estadia",
-    "mkt_hospede_frequent":"Hóspede frequente","novos_negocios":"Novos negócios",
+    "mkt_hospede_frequent":"HÃ³spede frequente","novos_negocios":"Novos negÃ³cios",
     "trabalhe_conosco":"Trabalhe conosco","conversa_operacional":"Conversa operacional",
     "teste":"Teste","checkin_b2b":"Check-in B2B","reserva_upgrade":"Upgrade de reserva",
-    "cupom_de_desconto_reservas":"Cupom de desconto","mensalista_contrato_venda":"Mensalista — contrato",
+    "cupom_de_desconto_reservas":"Cupom de desconto","mensalista_contrato_venda":"Mensalista â contrato",
     "solicitacao_de_late_check_out_sem_disponibilidade":"Late check-out (sem disponibilidade)",
-    "duvidas_omnibees":"Dúvidas Omnibees","alteracao_de_dados_cadastrais":"Alteração de dados cadastrais",
+    "duvidas_omnibees":"DÃºvidas Omnibees","alteracao_de_dados_cadastrais":"AlteraÃ§Ã£o de dados cadastrais",
 }
 
-# ── Funções auxiliares ───────────────────────────────────────
+# ââ FunÃ§Ãµes auxiliares âââââââââââââââââââââââââââââââââââââââ
 
 def lbl(tag):
     t = tag.lower().strip()
     return LABELS.get(t, t.replace("_"," ").replace("-"," ").title())
 
 def _v(val):
-    """Normaliza valor: string vazia ou None → None"""
     if val is None: return None
     s = str(val).strip()
     return None if s == '' else s
@@ -235,31 +245,122 @@ def classify(tag):
 def _safe_float(val):
     v = _v(val)
     if not v: return 0.0
-    try: return float(str(v).replace(',','.'))
+    # Remove %, R$, espaÃ§os nÃ£o-separÃ¡veis antes de converter
+    cleaned = str(v).replace(',','.').replace('%','').replace('R$','').replace('\xa0','').strip()
+    try: return float(cleaned)
     except: return 0.0
 
 def _safe_int(val):
     v = _v(val)
     if not v: return 0
-    try: return int(float(str(v).replace(',','.')))
+    cleaned = str(v).replace(',','.').replace('%','').strip()
+    try: return int(float(cleaned))
     except: return 0
 
-# ── Função principal de processamento ───────────────────────
+def _parse_mes_key(val, ano_base="2026"):
+    """Normaliza label de mÃªs para YYYY-MM. Ex: 'Abril' â '2026-04'"""
+    s = str(val or "").strip().lower()
+    if not s: return None
+    # JÃ¡ no formato YYYY-MM
+    m = re.match(r'(\d{4})-(\d{2})', s)
+    if m: return f"{m.group(1)}-{m.group(2)}"
+    # Formato MM/YYYY ou MM-YYYY
+    m = re.match(r'(\d{1,2})[/-](\d{4})', s)
+    if m: return f"{m.group(2)}-{m.group(1).zfill(2)}"
+    # Nome do mÃªs (com ou sem ano)
+    for nome, num in MES_NUM.items():
+        if s.startswith(nome):
+            yr_m = re.search(r'\d{2,4}', s[len(nome):])
+            yr = yr_m.group() if yr_m else ano_base
+            if len(yr) == 2: yr = "20" + yr
+            return f"{yr}-{num}"
+    return None
+
+def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
+    """Agrega mÃ©tricas para um conjunto de ticket IDs."""
+    cc = defaultdict(int)
+    ctpr = defaultdict(list); cttf = defaultdict(list); ctags = defaultdict(Counter)
+    emp_c = Counter(); emp_m = defaultdict(Counter); clu_c = Counter()
+    ag_c = defaultdict(int); ag_tpr = defaultdict(list)
+    ag_ttf = defaultdict(list); ag_msg = defaultdict(list)
+    pri = Counter(); tprs = []; ttfs = []
+
+    for tid in tids:
+        base = ticket_base[tid]
+        tags = [t.strip() for t in ticket_tags.get(tid, [])]
+        tpr = base["tpr"]; ttf = base["ttf"]
+        if tpr is not None: tprs.append(tpr)
+        if ttf is not None: ttfs.append(ttf)
+        ag = base["agente"] or "Sem agente"
+        ag_c[ag]+=1; ag_tpr[ag].append(tpr); ag_ttf[ag].append(ttf); ag_msg[ag].append(base["msgs"])
+        emps = set()
+        for tag in tags:
+            e = detect_emp(tag)
+            if e: emps.add(e)
+        for e in emps:
+            emp_c[e]+=1; clu_c[CLUSTERS.get(e,"Outros")]+=1
+        for tag in tags:
+            t = tag.lower().strip()
+            if t in MAPA_PRIORIDADE: pri[MAPA_PRIORIDADE[t]]+=1; break
+        mot = [t for t in tags if t.lower() not in TAGS_STATUS_CLIENTE
+               and t.lower() not in MAPA_PRIORIDADE and not detect_emp(t)]
+        for e in emps:
+            for mt in mot: emp_m[e][lbl(mt)]+=1
+        tclassifs = set()
+        for tag in mot:
+            for cid in classify(tag):
+                tclassifs.add(cid); ctags[cid][lbl(tag)]+=1
+        for cid in tclassifs:
+            cc[cid]+=1; ctpr[cid].append(tpr); cttf[cid].append(ttf)
+
+    classifs = [{"id":cid,"label":CLASSIF_META[cid]["label"],"cor":CLASSIF_META[cid]["cor"],
+        "count":cc.get(cid,0),"tpr_med":avg(ctpr.get(cid,[])),"ttf_med":avg(cttf.get(cid,[])),
+        "top_tags":[{"label":k,"count":v} for k,v in ctags[cid].most_common(8)]}
+        for cid in CLASSIF_ORDER]
+
+    emps_lista = []
+    for nome in EMPREEND_ORDER:
+        tickets = emp_c.get(nome,0)
+        occ = (occ_lookup or {}).get(nome,{})
+        reservas = occ.get("reservas",0)
+        occ_pct = occ.get("occ_pct",None)
+        taxa = round(tickets/reservas*100,1) if reservas>0 else None
+        top8 = [{"label":k,"count":v} for k,v in emp_m[nome].most_common(8)]
+        emps_lista.append({"nome":nome,"cluster":CLUSTERS.get(nome,"Outros"),
+            "count":tickets,"top_motivos":top8,
+            "reservas":reservas,"occ_pct":occ_pct,"taxa_contato":taxa})
+    emps_lista.sort(key=lambda x: -x["count"])
+
+    agentes = [{"nome":ag,"tickets":cnt,"tpr_med":avg(ag_tpr[ag]),
+        "ttf_med":avg(ag_ttf[ag]),"msgs_med":avg(ag_msg[ag])}
+        for ag,cnt in sorted(ag_c.items(),key=lambda x:-x[1])]
+
+    clusters_lista = [{"nome":cl,"count":clu_c.get(cl,0)} for cl in CLUSTER_ORDER]
+
+    return {
+        "total": len(tids),
+        "tpr_med": avg(tprs),
+        "ttf_med": avg(ttfs),
+        "classifs": classifs,
+        "empreendimentos": emps_lista,
+        "agentes": agentes,
+        "clusters": clusters_lista,
+        "prioridades": {"Alta":pri.get("Alta",0),"Media":pri.get("MÃ©dia",0),"Baixa":pri.get("Baixa",0)},
+    }
+
+# ââ FunÃ§Ã£o principal âââââââââââââââââââââââââââââââââââââââââ
 
 def processar(rows_droz, rows_occ=None):
     """
     Processa dados de atendimento e OCC.
-
-    rows_droz : lista de linhas (list/tuple) com os dados de tickets (sem header)
+    rows_droz : lista de linhas com dados de tickets (sem header)
     rows_occ  : lista de linhas com dados de OCC (sem header), ou None
-
     Retorna: payload dict pronto para JSON
     """
-    # Leitura de tickets
+    # 1. Leitura de tickets
     ticket_base = {}
     ticket_tags = defaultdict(list)
     for row in rows_droz:
-        # Garante que row tem colunas suficientes
         row = list(row) + [None]*25
         tid = _v(row[1])
         if not tid: continue
@@ -273,31 +374,43 @@ def processar(rows_droz, rows_occ=None):
                 "msgs":   _safe_int(row[14]),
             }
         if tag: ticket_tags[tid].append(tag.strip())
-    total = len(ticket_base)
 
-    # Leitura de OCC
-    # Estrutura da aba "Reservas e OCC" (com coluna Mês em A):
-    #   col A (0): mês          ex: "2026-04" ou "Abr/26"
-    #   col B (1): empreendimento
-    #   col E (4): unidades ocupadas (reservas)
-    #   col G (6): faturamento
-    #   col H (7): occ% (decimal 0-1 ou percentual 0-100)
-    occ_data = defaultdict(dict)   # {mes: {emp: {reservas, occ_pct, faturamento}}}
+    # 2. Volume por perÃ­odo (para construÃ§Ã£o de keys)
+    vd = Counter(); vs = Counter(); vm = Counter()
+    for tid, base in ticket_base.items():
+        dt = base["data"]
+        if dt:
+            vd[dt.strftime("%Y-%m-%d")]+=1
+            vm[dt.strftime("%Y-%m")]+=1
+            vs[sem_lbl(dt)]+=1
+
+    # 3. Leitura de OCC
+    # Estrutura da aba "Reservas e OCC" (com coluna MÃªs em A):
+    #   col A (0): mÃªs, col B (1): empreendimento
+    #   col E (4): un. ocupadas, col G (6): faturamento, col H (7): occ%
+    occ_raw_data = defaultdict(dict)
     if rows_occ:
         for row in rows_occ:
             row = list(row) + [None]*9
             if not _v(row[1]): continue
-            mes = str(_v(row[0]) or "").strip()
+            mes_raw = str(_v(row[0]) or "").strip()
             canon = detect_emp(str(row[1]))
             if not canon: continue
             un_ocup = _safe_int(row[4])
-            occ_raw = _safe_float(row[7])
-            occ_pct = round(occ_raw*100, 1) if 0 < occ_raw <= 1.0 else round(occ_raw, 1)
+            occ_r = _safe_float(row[7])
+            occ_pct = round(occ_r*100, 1) if 0 < occ_r <= 1.0 else round(occ_r, 1)
             fat = _safe_float(row[6])
-            occ_data[mes][canon] = {"reservas": un_ocup, "occ_pct": occ_pct, "faturamento": fat}
+            occ_raw_data[mes_raw][canon] = {"reservas":un_ocup,"occ_pct":occ_pct,"faturamento":fat}
 
-    # Agrega OCC de todos os meses (para visão geral)
-    occ_total = defaultdict(lambda: {"reservas": 0, "occ_pct_vals": [], "faturamento": 0.0})
+    # 4. Normaliza chaves de OCC para YYYY-MM
+    ano_base = sorted(vm.keys())[0][:4] if vm else "2026"
+    occ_data = defaultdict(dict)
+    for mes_raw, mes_data in occ_raw_data.items():
+        key = _parse_mes_key(mes_raw, ano_base) or mes_raw
+        occ_data[key] = mes_data
+
+    # 5. OCC agregado (todos os meses)
+    occ_total = defaultdict(lambda: {"reservas":0,"occ_pct_vals":[],"faturamento":0.0})
     for mes_data in occ_data.values():
         for emp, vals in mes_data.items():
             occ_total[emp]["reservas"] += vals["reservas"]
@@ -308,117 +421,70 @@ def processar(rows_droz, rows_occ=None):
         pcts = v["occ_pct_vals"]
         occ_agg[emp] = {
             "reservas": v["reservas"],
-            "occ_pct": round(sum(pcts)/len(pcts), 1) if pcts else None,
-            "faturamento": round(v["faturamento"], 2),
+            "occ_pct": round(sum(pcts)/len(pcts),1) if pcts else None,
+            "faturamento": round(v["faturamento"],2),
         }
 
-    # Agregação
-    vd=Counter(); vs=Counter(); vm=Counter()
-    pri=Counter(); emp_c=Counter(); clu_c=Counter()
-    emp_m=defaultdict(Counter); cc=defaultdict(int)
-    ctpr=defaultdict(list); cttf=defaultdict(list); ctags=defaultdict(Counter)
-    ag_c=defaultdict(int); ag_tpr=defaultdict(list); ag_ttf=defaultdict(list); ag_msg=defaultdict(list)
+    # 6. MÃ©tricas globais
+    all_tids = list(ticket_base.keys())
+    gm = _build_metrics(all_tids, ticket_base, ticket_tags, occ_agg)
 
-    for tid, base in ticket_base.items():
-        tags = [t.strip() for t in ticket_tags.get(tid,[])]
-        dt=base["data"]; tpr=base["tpr"]; ttf=base["ttf"]
-        if dt:
-            vd[dt.strftime("%Y-%m-%d")]+=1
-            vm[dt.strftime("%Y-%m")]+=1
-            vs[sem_lbl(dt)]+=1
-        ag = base["agente"] or "Sem agente"
-        ag_c[ag]+=1; ag_tpr[ag].append(tpr); ag_ttf[ag].append(ttf); ag_msg[ag].append(base["msgs"])
-        emps = set()
-        for tag in tags:
-            e = detect_emp(tag)
-            if e: emps.add(e)
-        for e in emps:
-            emp_c[e]+=1
-            clu_c[CLUSTERS.get(e,"Outros")]+=1
-        for tag in tags:
-            t = tag.lower().strip()
-            if t in MAPA_PRIORIDADE: pri[MAPA_PRIORIDADE[t]]+=1; break
-        mot = [t for t in tags if t.lower() not in TAGS_STATUS_CLIENTE
-               and t.lower() not in MAPA_PRIORIDADE and not detect_emp(t)]
-        for e in emps:
-            for mt in mot: emp_m[e][lbl(mt)]+=1
-        tclassifs = set()
-        for tag in mot:
-            for cid in classify(tag):
-                tclassifs.add(cid)
-                ctags[cid][lbl(tag)]+=1
-        for cid in tclassifs:
-            cc[cid]+=1; ctpr[cid].append(tpr); cttf[cid].append(ttf)
-
-    # Estruturas para o dashboard
+    # 7. Volume charts (global)
     dias_s = sorted(vd.items())
-    seen_w=[]; seen_ws=set()
-    for d_str,_ in dias_s:
+    seen_w = []; seen_ws = set()
+    for d_str, _ in dias_s:
         d = datetime.strptime(d_str,"%Y-%m-%d").date()
         lw = sem_lbl(d)
         if lw not in seen_ws: seen_ws.add(lw); seen_w.append(lw)
     sems = [{"d":w,"c":vs[w]} for w in seen_w]
-    NM = {"01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun",
-          "07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"}
-    meses = [{"d":NM.get(m[5:7],m[5:7]),"c":c} for m,c in sorted(vm.items())]
+    meses_vol = [{"d":NM.get(m[5:7],m[5:7]),"c":c,"k":m} for m,c in sorted(vm.items())]
 
-    classifs = [{"id":cid,"label":CLASSIF_META[cid]["label"],"cor":CLASSIF_META[cid]["cor"],
-        "count":cc.get(cid,0),"tpr_med":avg(ctpr.get(cid,[])),"ttf_med":avg(cttf.get(cid,[])),
-        "top_tags":[{"label":k,"count":v} for k,v in ctags[cid].most_common(8)]}
-        for cid in CLASSIF_ORDER]
+    # 8. MÃ©tricas por mÃªs
+    por_mes = {}
+    for mes_key in sorted(vm.keys()):
+        month_tids = [tid for tid, base in ticket_base.items()
+                      if base["data"] and base["data"].strftime("%Y-%m") == mes_key]
+        month_occ = dict(occ_data.get(mes_key, {}))
+        mm = _build_metrics(month_tids, ticket_base, ticket_tags, month_occ)
+        month_dias = [{"d":d[8:]+"/"+d[5:7],"c":c}
+                      for d,c in sorted(vd.items()) if d[:7]==mes_key]
+        por_mes[mes_key] = {**mm, "label":NM.get(mes_key[5:7],mes_key), "dias":month_dias}
 
-    emps_lista = []
-    for nome in EMPREEND_ORDER:
-        tickets = emp_c.get(nome,0)
-        occ = occ_agg.get(nome,{})
-        reservas = occ.get("reservas",0)
-        occ_pct = occ.get("occ_pct",None)
-        taxa = round(tickets/reservas*100,1) if reservas>0 else None
-        top8 = [{"label":k,"count":v} for k,v in emp_m[nome].most_common(8)]
-        emps_lista.append({"nome":nome,"cluster":CLUSTERS.get(nome,"Outros"),
-            "count":tickets,"top_motivos":top8,
-            "reservas":reservas,"occ_pct":occ_pct,"taxa_contato":taxa})
-    emps_lista.sort(key=lambda x: -x["count"])
-
-    correl = [e for e in emps_lista if e["taxa_contato"] is not None]
-    correl.sort(key=lambda x: -x["taxa_contato"])
-
-    clusters_lista = [{"nome":cl,"count":clu_c.get(cl,0)} for cl in CLUSTER_ORDER]
-
-    agentes = [{"nome":ag,"tickets":cnt,"tpr_med":avg(ag_tpr[ag]),
-        "ttf_med":avg(ag_ttf[ag]),"msgs_med":avg(ag_msg[ag])}
-        for ag,cnt in sorted(ag_c.items(),key=lambda x:-x[1])]
-
-    pi=sorted(vm.keys())[0] if vm else ""; pf=sorted(vm.keys())[-1] if vm else ""
-    periodo = (NM.get(pi[5:7],"")+(" – " if pi else "")+NM.get(pf[5:7],"")+(" "+pf[:4] if pf else "")) if pi else ""
-
-    # occ_meses: {mes: [{nome, reservas, occ_pct, faturamento}, ...]} — para filtro por mês no dashboard
+    # 9. occ_meses payload (chaves normalizadas)
     occ_meses_payload = {}
-    for mes, mes_data in sorted(occ_data.items()):
-        occ_meses_payload[mes] = [
-            {"nome": emp, "reservas": v["reservas"], "occ_pct": v["occ_pct"], "faturamento": v["faturamento"]}
+    for mes_key, mes_data in sorted(occ_data.items()):
+        occ_meses_payload[mes_key] = [
+            {"nome":emp,"reservas":v["reservas"],"occ_pct":v["occ_pct"],"faturamento":v["faturamento"]}
             for emp, v in mes_data.items()
         ]
+
+    pi = sorted(vm.keys())[0] if vm else ""; pf = sorted(vm.keys())[-1] if vm else ""
+    if pi == pf:
+        periodo = NM.get(pi[5:7],"") + " " + pi[:4] if pi else ""
+    else:
+        periodo = NM.get(pi[5:7],"") + " â " + NM.get(pf[5:7],"") + " " + pf[:4] if pi else ""
 
     return {
         "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M"),
         "periodo": periodo,
-        "total": total,
-        "tpr_med": avg([b["tpr"] for b in ticket_base.values()]),
-        "ttf_med": avg([b["ttf"] for b in ticket_base.values()]),
+        "total": gm["total"],
+        "tpr_med": gm["tpr_med"],
+        "ttf_med": gm["ttf_med"],
         "dias": [{"d":d,"c":c} for d,c in dias_s],
         "semanas": sems,
-        "meses": meses,
-        "classifs": classifs,
-        "empreendimentos": emps_lista,
-        "correl": correl,
-        "clusters": clusters_lista,
-        "prioridades": {"Alta":pri.get("Alta",0),"Media":pri.get("Média",0),"Baixa":pri.get("Baixa",0)},
-        "agentes": agentes,
-        "occ_meses": occ_meses_payload,   # dados de OCC/reservas separados por mês
+        "meses": meses_vol,
+        "classifs": gm["classifs"],
+        "empreendimentos": gm["empreendimentos"],
+        "correl": sorted([e for e in gm["empreendimentos"] if e["taxa_contato"] is not None],
+                         key=lambda x: -x["taxa_contato"]),
+        "clusters": gm["clusters"],
+        "prioridades": gm["prioridades"],
+        "agentes": gm["agentes"],
+        "occ_meses": occ_meses_payload,
+        "por_mes": por_mes,
     }
 
-# ── Uso local (python3 processar_dados.py) ──────────────────
+# ââ Uso local ââââââââââââââââââââââââââââââââââââââââââââââââ
 
 if __name__ == "__main__":
     import openpyxl
@@ -426,7 +492,7 @@ if __name__ == "__main__":
     wb = openpyxl.load_workbook(ARQUIVO_ENTRADA)
 
     sheet_droz = None
-    for candidate in ["Atendimentos", "Input Droz (Abr-Mai)", "Resultado da consulta"]:
+    for candidate in ["Atendimentos","Input Droz (Abr-Mai)","Resultado da consulta"]:
         if candidate in wb.sheetnames:
             sheet_droz = wb[candidate]; break
     if not sheet_droz:
@@ -434,16 +500,17 @@ if __name__ == "__main__":
     print("Aba de atendimentos:", sheet_droz.title)
 
     ws_occ = wb["Reservas e OCC"] if "Reservas e OCC" in wb.sheetnames else None
-    print("Aba de OCC:", ws_occ.title if ws_occ else "não encontrada")
+    print("Aba de OCC:", ws_occ.title if ws_occ else "nÃ£o encontrada")
 
     rows_droz = list(sheet_droz.iter_rows(min_row=2, values_only=True))
     rows_occ  = list(ws_occ.iter_rows(min_row=2, values_only=True)) if ws_occ else None
 
     payload = processar(rows_droz, rows_occ)
-    print("Tickets únicos:", payload["total"])
+    print("Tickets Ãºnicos:", payload["total"])
     print("TPR med:", payload["tpr_med"], "| TTF med:", payload["ttf_med"])
+    print("OCC meses:", list(payload["occ_meses"].keys()))
+    print("Por mÃªs:", {k: payload["por_mes"][k]["total"] for k in payload["por_mes"]})
 
-    print("Injetando dados no template...")
     with open(ARQUIVO_TEMPLATE,"r",encoding="utf-8") as f:
         html = f.read()
     html = html.replace("__DATA__", json.dumps(payload, ensure_ascii=False))
