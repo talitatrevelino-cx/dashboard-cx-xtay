@@ -1,11 +1,14 @@
 """
-processar_dados.py v5 — Dashboard Analítica de CX · Xtay
+processar_dados.py v6 — Dashboard Analítica de CX · Xtay
 Módulo reutilizável: processar(rows_droz, rows_occ) → payload dict
 Uso local: python3 processar_dados.py  (lê Base de Atendimento.xlsx)
 """
 import json, re
 from collections import defaultdict, Counter
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+# GMT-3 (Horário de Brasília) — item 12
+TZ_BR = timezone(timedelta(hours=-3))
 
 ARQUIVO_ENTRADA  = "Base de Atendimento.xlsx"
 ARQUIVO_TEMPLATE = "template.html"
@@ -17,12 +20,19 @@ TAGS_STATUS_CLIENTE = {
 }
 MAPA_PRIORIDADE = {"prioridade_alta":"Alta","prioridade_media":"Média","prioridade_baixa":"Baixa"}
 
+# Empreendimentos ativos (lista oficial — item 4)
+EMPREEND_ATIVOS = {
+    "Linked Batel","PUC","Cais","Atrium","Upper West",
+    "Vila Madalena","Fuji","Oslo","Campos Sales","Simple Smart","Soho","Ipiranga"
+}
+
 EMPREEND_KEYWORDS = [
     ("linked batel","Linked Batel"),("linked_batel","Linked Batel"),
     ("campos salles","Campos Sales"),("campos_salles","Campos Sales"),
     ("campos sales","Campos Sales"),("campos_sales","Campos Sales"),
     ("upper west","Upper West"),("upper_west","Upper West"),
     ("simple smart","Simple Smart"),("simple_smart","Simple Smart"),
+    ("simple smarrt","Simple Smart"),("simple smarrt","Simple Smart"),
     ("vila madalena","Vila Madalena"),("vila_madalena","Vila Madalena"),
     ("the bridge","The Bridge"),("the_bridge","The Bridge"),
     ("the spot one","The Spot One"),("the_spot_one","The Spot One"),("tso","The Spot One"),
@@ -30,7 +40,7 @@ EMPREEND_KEYWORDS = [
     ("princess","Princess Curitiba"),
     ("bk30 largo do arouche","BK30 Largo do Arouche"),("bk30 santana","BK30 Santana"),
     ("restinga","Restinga"),
-    ("ipiranga","Ipiranga"),
+    ("ipiranga","Ipiranga"),("ip alto","Ipiranga"),
     ("upper","Upper West"),("simple","Simple Smart"),
     ("cais","Cais"),("atrium","Atrium"),("fuji","Fuji"),
     ("soho","Soho"),("oslo","Oslo"),("puc","PUC"),
@@ -119,7 +129,7 @@ CLASSIF_EXACT = {
     "detalhes_da_acomodacao":       "duvidas_gerais",
     "duvidas_descarte_lixo":        "duvidas_gerais",
     "duvidas_gerais":               "duvidas_gerais",
-    "duvidas_predio":               "duvidas_gerais",
+    "duvidas_predio":               "duvidas_gerais",   # adicionado v6
     "duvidas_sobre_limpeza":        "duvidas_gerais",
     # ── Serviços Solicitados ─────────────────────────────────
     "solicitacao_de_nota_fiscal":               "servicos",
@@ -132,7 +142,7 @@ CLASSIF_EXACT = {
     "mini_mercado":                             "servicos",
     "lavanderia_omo":                           "servicos",
     "cafe_da_manha":                            "servicos",
-    # ── Manutenção (tag mãe também compõe Serviços) ──────────
+    # ── Manutenção ───────────────────────────────────────────
     "solicitacao_de_servico_manutencao":    ["servicos","manutencao"],
     "ar_condicionado":                      "manutencao",
     "hidraulica":                           "manutencao",
@@ -194,12 +204,10 @@ CLASSIF_ORDER = [
     "servicos","manutencao","limpeza","operacional","marketing","contato_ativo","improdutivos",
 ]
 
+# Apenas empreendimentos ativos — item 4
 EMPREEND_ORDER = [
-    "Vila Madalena","Upper West","BK30 Largo do Arouche","BK30 Santana",
-    "Guarulhos Aeroporto","Ipiranga",
-    "Cais","PUC","Campos Sales","Princess Curitiba","Linked Batel",
-    "Atrium","Fuji","Soho","Oslo","The Bridge","The Spot One","Restinga",
-    "Simple Smart",
+    "Linked Batel","PUC","Upper West","Vila Madalena","Cais",
+    "Atrium","Fuji","Oslo","Campos Sales","Simple Smart","Soho","Ipiranga",
 ]
 CLUSTER_ORDER = ["São Paulo","Curitiba","Linked Batel","Porto Alegre","Santa Catarina","João Pessoa"]
 
@@ -241,6 +249,7 @@ LABELS = {
     "mensalista_cotacao_e_duvidas":"Mensalista — cotação",
     "check_in_de_dependente":"Check-in de dependente",
     "cafe_da_manha":"Café da manhã","duvidas_sobre_limpeza":"Dúvidas sobre limpeza",
+    "duvidas_predio":"Dúvidas sobre o prédio",
     "alteracao_de_datas":"Alteração de datas",
     "cancelamento_de_reserva_fora_da_politica":"Cancelamento fora da política",
     "cancelamento_de_reserva_dentro_da_politica":"Cancelamento dentro da política",
@@ -276,6 +285,7 @@ LABELS = {
     "cupom_de_desconto_reservas":"Cupom de desconto","mensalista_contrato_venda":"Mensalista — contrato",
     "solicitacao_de_late_check_out_sem_disponibilidade":"Late check-out (sem disponibilidade)",
     "duvidas_omnibees":"Dúvidas Omnibees","alteracao_de_dados_cadastrais":"Alteração de dados cadastrais",
+    "comercial_hospedar":"Comercial — hospedar","comercial_morar":"Comercial — morar",
 }
 
 # ── Funções auxiliares ───────────────────────────────────────
@@ -330,10 +340,18 @@ def classify(tag):
         else: cids.add(val)
     return cids
 
+def is_motivo(tag):
+    """Retorna True se a tag deve ser contada como motivo de contato."""
+    t = tag.lower().strip()
+    if t in TAGS_STATUS_CLIENTE: return False
+    if t in MAPA_PRIORIDADE: return False
+    if t.startswith("hospedado_"): return False  # tags de localização
+    if detect_emp(t): return False
+    return True
+
 def _safe_float(val):
     v = _v(val)
     if not v: return 0.0
-    # Remove %, R$, espaços não-separáveis antes de converter
     cleaned = str(v).replace(',','.').replace('%','').replace('R$','').replace('\xa0','').strip()
     try: return float(cleaned)
     except: return 0.0
@@ -346,16 +364,12 @@ def _safe_int(val):
     except: return 0
 
 def _parse_mes_key(val, ano_base="2026"):
-    """Normaliza label de mês para YYYY-MM. Ex: 'Abril' → '2026-04'"""
     s = str(val or "").strip().lower()
     if not s: return None
-    # Já no formato YYYY-MM
     m = re.match(r'(\d{4})-(\d{2})', s)
     if m: return f"{m.group(1)}-{m.group(2)}"
-    # Formato MM/YYYY ou MM-YYYY
     m = re.match(r'(\d{1,2})[/-](\d{4})', s)
     if m: return f"{m.group(2)}-{m.group(1).zfill(2)}"
-    # Nome do mês (com ou sem ano)
     for nome, num in MES_NUM.items():
         if s.startswith(nome):
             yr_m = re.search(r'\d{2,4}', s[len(nome):])
@@ -372,6 +386,11 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
     ag_c = defaultdict(int); ag_tpr = defaultdict(list)
     ag_ttf = defaultdict(list); ag_msg = defaultdict(list)
     pri = Counter(); tprs = []; ttfs = []
+    canal_c = Counter()
+    # Cruzamentos — item 9
+    manut_emp = Counter(); limp_emp = Counter()
+    # Tags em atendimentos de prioridade — item 3
+    pri_tag_c = {"Alta": Counter(), "Média": Counter(), "Baixa": Counter()}
 
     for tid in tids:
         base = ticket_base[tid]
@@ -381,19 +400,37 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
         if ttf is not None: ttfs.append(ttf)
         ag = base["agente"] or "Sem agente"
         ag_c[ag]+=1; ag_tpr[ag].append(tpr); ag_ttf[ag].append(ttf); ag_msg[ag].append(base["msgs"])
+        canal_c[base.get("canal","—")] += 1
+
+        # Empreendimentos
         emps = set()
         for tag in tags:
             e = detect_emp(tag)
             if e: emps.add(e)
+        # Filtrar apenas ativos
+        emps = {e for e in emps if e in EMPREEND_ATIVOS}
+
         for e in emps:
             emp_c[e]+=1; clu_c[CLUSTERS.get(e,"Outros")]+=1
+
+        # Prioridade
+        ticket_prio = None
         for tag in tags:
             t = tag.lower().strip()
-            if t in MAPA_PRIORIDADE: pri[MAPA_PRIORIDADE[t]]+=1; break
-        mot = [t for t in tags if t.lower() not in TAGS_STATUS_CLIENTE
-               and t.lower() not in MAPA_PRIORIDADE and not detect_emp(t)]
+            if t in MAPA_PRIORIDADE:
+                ticket_prio = MAPA_PRIORIDADE[t]
+                pri[ticket_prio]+=1
+                break
+
+        mot = [t for t in tags if is_motivo(t)]
         for e in emps:
             for mt in mot: emp_m[e][lbl(mt)]+=1
+
+        # Tags por prioridade — item 3
+        if ticket_prio:
+            for mt in mot:
+                pri_tag_c[ticket_prio][lbl(mt)] += 1
+
         tclassifs = set()
         for tag in mot:
             for cid in classify(tag):
@@ -401,40 +438,137 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
         for cid in tclassifs:
             cc[cid]+=1; ctpr[cid].append(tpr); cttf[cid].append(ttf)
 
-    classifs = [{"id":cid,"label":CLASSIF_META[cid]["label"],"cor":CLASSIF_META[cid]["cor"],
-        "count":cc.get(cid,0),"tpr_med":avg(ctpr.get(cid,[])),"ttf_med":avg(cttf.get(cid,[])),
-        "top_tags":[{"label":k,"count":v} for k,v in ctags[cid].most_common(8)]}
-        for cid in CLASSIF_ORDER]
+        # Cruzamentos Manutenção / Limpeza x Empreendimento — item 9
+        if "manutencao" in tclassifs:
+            for e in emps: manut_emp[e]+=1
+            if not emps: manut_emp["Sem empreendimento"]+=1
+        if "limpeza" in tclassifs:
+            for e in emps: limp_emp[e]+=1
+            if not emps: limp_emp["Sem empreendimento"]+=1
+
+    total = len(tids)
+
+    # Classifs com % — itens 1 e 2
+    classifs = []
+    for cid in CLASSIF_ORDER:
+        cnt = cc.get(cid, 0)
+        pct = round(cnt / total * 100, 1) if total > 0 else 0
+        classifs.append({
+            "id": cid, "label": CLASSIF_META[cid]["label"], "cor": CLASSIF_META[cid]["cor"],
+            "count": cnt, "pct": pct,
+            "tpr_med": avg(ctpr.get(cid,[])), "ttf_med": avg(cttf.get(cid,[])),
+            "top_tags": [{"label":k,"count":v} for k,v in ctags[cid].most_common(8)],
+        })
 
     emps_lista = []
     for nome in EMPREEND_ORDER:
-        tickets = emp_c.get(nome,0)
-        occ = (occ_lookup or {}).get(nome,{})
-        reservas = occ.get("reservas",0)
-        occ_pct = occ.get("occ_pct",None)
-        taxa = round(tickets/reservas*100,1) if reservas>0 else None
+        tickets = emp_c.get(nome, 0)
+        occ = (occ_lookup or {}).get(nome, {})
+        reservas = occ.get("reservas", 0)
+        occ_pct = occ.get("occ_pct", None)
+        un_total = occ.get("un_total", 0)
+        taxa = round(tickets / reservas * 100, 1) if reservas > 0 else None
+        pct_emp = round(tickets / total * 100, 1) if total > 0 else 0
         top8 = [{"label":k,"count":v} for k,v in emp_m[nome].most_common(8)]
-        emps_lista.append({"nome":nome,"cluster":CLUSTERS.get(nome,"Outros"),
-            "count":tickets,"top_motivos":top8,
-            "reservas":reservas,"occ_pct":occ_pct,"taxa_contato":taxa})
+        manut_cnt = manut_emp.get(nome, 0)
+        limp_cnt  = limp_emp.get(nome, 0)
+        emps_lista.append({
+            "nome": nome, "cluster": CLUSTERS.get(nome,"Outros"),
+            "count": tickets, "pct": pct_emp, "top_motivos": top8,
+            "reservas": reservas, "occ_pct": occ_pct, "un_total": un_total,
+            "taxa_contato": taxa,
+            "manutencao": manut_cnt, "limpeza": limp_cnt,
+        })
     emps_lista.sort(key=lambda x: -x["count"])
 
-    agentes = [{"nome":ag,"tickets":cnt,"tpr_med":avg(ag_tpr[ag]),
-        "ttf_med":avg(ag_ttf[ag]),"msgs_med":avg(ag_msg[ag])}
+    agentes = [{"nome":ag,"tickets":cnt,"pct":round(cnt/total*100,1) if total>0 else 0,
+        "tpr_med":avg(ag_tpr[ag]),"ttf_med":avg(ag_ttf[ag]),"msgs_med":avg(ag_msg[ag]),
+        "nps": None, "aderencia": None}  # Colunas futuras — configurar na planilha
         for ag,cnt in sorted(ag_c.items(),key=lambda x:-x[1])]
 
     clusters_lista = [{"nome":cl,"count":clu_c.get(cl,0)} for cl in CLUSTER_ORDER]
 
+    canais_lista = [{"canal":k,"count":v} for k,v in canal_c.most_common()]
+
+    # Tags de prioridade — item 3
+    priority_tags = {
+        "Alta":  [{"label":k,"count":v} for k,v in pri_tag_c["Alta"].most_common(10)],
+        "Média": [{"label":k,"count":v} for k,v in pri_tag_c["Média"].most_common(10)],
+        "Baixa": [{"label":k,"count":v} for k,v in pri_tag_c["Baixa"].most_common(10)],
+    }
+
     return {
-        "total": len(tids),
+        "total": total,
         "tpr_med": avg(tprs),
         "ttf_med": avg(ttfs),
         "classifs": classifs,
         "empreendimentos": emps_lista,
         "agentes": agentes,
         "clusters": clusters_lista,
-        "prioridades": {"Alta":pri.get("Alta",0),"Media":pri.get("Média",0),"Baixa":pri.get("Baixa",0)},
+        "canais": canais_lista,
+        "prioridades": {
+            "Alta":  pri.get("Alta",0),
+            "Media": pri.get("Média",0),
+            "Baixa": pri.get("Baixa",0),
+        },
+        "priority_tags": priority_tags,
     }
+
+def _volume_insights(vd):
+    """Calcula insights sobre volume diário — item 13."""
+    if not vd:
+        return {}
+    sorted_days = sorted(vd.items())
+    counts = [c for _, c in sorted_days]
+    if not counts:
+        return {}
+    total_c = sum(counts)
+    avg_daily = round(total_c / len(counts), 1)
+    max_day = max(sorted_days, key=lambda x: x[1])
+    min_day = min(sorted_days, key=lambda x: x[1])
+    # Tendência: últimos 7 dias vs 7 dias anteriores
+    trend_pct = None
+    trend_dir = "estável"
+    if len(counts) >= 14:
+        last7 = sum(counts[-7:])
+        prev7 = sum(counts[-14:-7])
+        if prev7 > 0:
+            trend_pct = round((last7 - prev7) / prev7 * 100, 1)
+            if trend_pct > 5: trend_dir = "crescimento"
+            elif trend_pct < -5: trend_dir = "redução"
+    return {
+        "max_day": {
+            "date": max_day[0],
+            "date_fmt": max_day[0][8:]+"/"+max_day[0][5:7],
+            "count": max_day[1],
+        },
+        "min_day": {
+            "date": min_day[0],
+            "date_fmt": min_day[0][8:]+"/"+min_day[0][5:7],
+            "count": min_day[1],
+        },
+        "avg_daily": avg_daily,
+        "total_dias": len(counts),
+        "trend_pct": trend_pct,
+        "trend_dir": trend_dir,
+    }
+
+def _tags_pendentes(all_tags_counter):
+    """
+    Retorna tags que não pertencem a nenhuma categoria — item 10.
+    Exclui: status de cliente, prioridade, empreendimentos, tags hospedado_.
+    """
+    pendentes = []
+    for tag, count in all_tags_counter.most_common():
+        t = tag.lower().strip()
+        if t in TAGS_STATUS_CLIENTE: continue
+        if t in MAPA_PRIORIDADE: continue
+        if t.startswith("hospedado_"): continue
+        if detect_emp(t): continue
+        cids = classify(t)
+        if cids: continue
+        pendentes.append({"tag": tag, "count": count, "label": lbl(tag)})
+    return pendentes
 
 # ── Função principal ─────────────────────────────────────────
 
@@ -448,8 +582,10 @@ def processar(rows_droz, rows_occ=None):
     # 1. Leitura de tickets
     ticket_base = {}
     ticket_tags = defaultdict(list)
+    all_tags_counter = Counter()
+
     for row in rows_droz:
-        row = list(row) + [None]*25
+        row = list(row) + [None]*30
         tid = _v(row[1])
         if not tid: continue
         tag = _v(row[23])
@@ -460,10 +596,17 @@ def processar(rows_droz, rows_occ=None):
                 "tpr":    parse_min(row[12]),
                 "ttf":    parse_min(row[13]),
                 "msgs":   _safe_int(row[14]),
+                "canal":  _v(row[18]) or "—",
+                # Colunas opcionais: NPS (col 24), Pesquisas Respondidas (col 25)
+                # Adicione essas colunas na planilha para habilitar os indicadores
+                "nps":       _safe_float(row[24]) if _v(row[24]) else None,
+                "pesquisa":  _safe_int(row[25]) if _v(row[25]) else None,
             }
-        if tag: ticket_tags[tid].append(tag.strip())
+        if tag:
+            ticket_tags[tid].append(tag.strip())
+            all_tags_counter[tag.strip().lower()] += 1
 
-    # 2. Volume por período (para construção de keys)
+    # 2. Volume por período
     vd = Counter(); vs = Counter(); vm = Counter()
     for tid, base in ticket_base.items():
         dt = base["data"]
@@ -472,49 +615,35 @@ def processar(rows_droz, rows_occ=None):
             vm[dt.strftime("%Y-%m")]+=1
             vs[sem_lbl(dt)]+=1
 
-    # 3. Leitura de OCC
-    occ_raw_data = defaultdict(dict)
+    # 3. Leitura de OCC — item 14
+    # Estrutura atual: col0=Empreendimento, col1=TotalUnidades, col2=UnDisp,
+    #                  col3=UnOcupadas, col4=DM, col5=Faturamento, col6=Ocupação%
+    occ_agg = {}
     if rows_occ:
         for row in rows_occ:
             row = list(row) + [None]*9
-            if not _v(row[1]): continue
-            mes_raw = str(_v(row[0]) or "").strip()
-            canon = detect_emp(str(row[1]))
+            emp_raw = str(_v(row[0]) or "").strip()
+            if not emp_raw: continue
+            canon = detect_emp(emp_raw)
             if not canon: continue
-            un_ocup = _safe_int(row[4])
-            occ_r = _safe_float(row[7])
-            occ_pct = round(occ_r*100, 1) if 0 < occ_r <= 1.0 else round(occ_r, 1)
-            fat = _safe_float(row[6])
-            occ_raw_data[mes_raw][canon] = {"reservas":un_ocup,"occ_pct":occ_pct,"faturamento":fat}
+            if canon not in EMPREEND_ATIVOS: continue
+            un_total = _safe_int(row[1])
+            un_ocup  = _safe_int(row[3])
+            occ_r    = _safe_float(row[6])
+            occ_pct  = round(occ_r*100, 1) if 0 < occ_r <= 1.0 else round(occ_r, 1)
+            fat      = _safe_float(row[5])
+            occ_agg[canon] = {
+                "reservas":  un_ocup,
+                "occ_pct":   occ_pct if occ_r > 0 else None,
+                "faturamento": fat,
+                "un_total":  un_total,
+            }
 
-    # 4. Normaliza chaves de OCC para YYYY-MM
-    ano_base = sorted(vm.keys())[0][:4] if vm else "2026"
-    occ_data = defaultdict(dict)
-    for mes_raw, mes_data in occ_raw_data.items():
-        key = _parse_mes_key(mes_raw, ano_base) or mes_raw
-        occ_data[key] = mes_data
-
-    # 5. OCC agregado (todos os meses)
-    occ_total = defaultdict(lambda: {"reservas":0,"occ_pct_vals":[],"faturamento":0.0})
-    for mes_data in occ_data.values():
-        for emp, vals in mes_data.items():
-            occ_total[emp]["reservas"] += vals["reservas"]
-            occ_total[emp]["faturamento"] += vals["faturamento"]
-            if vals["occ_pct"]: occ_total[emp]["occ_pct_vals"].append(vals["occ_pct"])
-    occ_agg = {}
-    for emp, v in occ_total.items():
-        pcts = v["occ_pct_vals"]
-        occ_agg[emp] = {
-            "reservas": v["reservas"],
-            "occ_pct": round(sum(pcts)/len(pcts),1) if pcts else None,
-            "faturamento": round(v["faturamento"],2),
-        }
-
-    # 6. Métricas globais
+    # 4. Métricas globais
     all_tids = list(ticket_base.keys())
     gm = _build_metrics(all_tids, ticket_base, ticket_tags, occ_agg)
 
-    # 7. Volume charts (global)
+    # 5. Volume charts
     dias_s = sorted(vd.items())
     seen_w = []; seen_ws = set()
     for d_str, _ in dias_s:
@@ -524,33 +653,42 @@ def processar(rows_droz, rows_occ=None):
     sems = [{"d":w,"c":vs[w]} for w in seen_w]
     meses_vol = [{"d":NM.get(m[5:7],m[5:7]),"c":c,"k":m} for m,c in sorted(vm.items())]
 
-    # 8. Métricas por mês
+    # 6. Métricas por mês
     por_mes = {}
     for mes_key in sorted(vm.keys()):
         month_tids = [tid for tid, base in ticket_base.items()
                       if base["data"] and base["data"].strftime("%Y-%m") == mes_key]
-        month_occ = dict(occ_data.get(mes_key, {}))
-        mm = _build_metrics(month_tids, ticket_base, ticket_tags, month_occ)
+        mm = _build_metrics(month_tids, ticket_base, ticket_tags, occ_agg)
         month_dias = [{"d":d[8:]+"/"+d[5:7],"c":c}
                       for d,c in sorted(vd.items()) if d[:7]==mes_key]
-        por_mes[mes_key] = {**mm, "label":NM.get(mes_key[5:7],mes_key), "dias":month_dias}
+        month_vd = Counter({d: c for d, c in vd.items() if d[:7] == mes_key})
+        por_mes[mes_key] = {
+            **mm, "label": NM.get(mes_key[5:7], mes_key),
+            "dias": month_dias,
+            "volume_insights": _volume_insights(month_vd),
+        }
 
-    # 9. occ_meses payload (chaves normalizadas)
-    occ_meses_payload = {}
-    for mes_key, mes_data in sorted(occ_data.items()):
-        occ_meses_payload[mes_key] = [
-            {"nome":emp,"reservas":v["reservas"],"occ_pct":v["occ_pct"],"faturamento":v["faturamento"]}
-            for emp, v in mes_data.items()
-        ]
+    # 7. Tags pendentes de categorização — item 10
+    tags_pendentes = _tags_pendentes(all_tags_counter)
 
+    # 8. Volume insights globais — item 13
+    vol_insights = _volume_insights(vd)
+
+    # 9. Período label
     pi = sorted(vm.keys())[0] if vm else ""; pf = sorted(vm.keys())[-1] if vm else ""
     if pi == pf:
         periodo = NM.get(pi[5:7],"") + " " + pi[:4] if pi else ""
     else:
-        periodo = NM.get(pi[5:7],"") + " – " + NM.get(pf[5:7],"") + " " + pf[:4] if pi else ""
+        periodo = NM.get(pi[5:7],"")+" – "+NM.get(pf[5:7],"")+" "+pf[:4] if pi else ""
+
+    # 10. OCC payload para visualização — item 14
+    occ_lista = [
+        {"nome":nome, **vals}
+        for nome, vals in occ_agg.items()
+    ]
 
     return {
-        "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "gerado_em": datetime.now(TZ_BR).strftime("%d/%m/%Y %H:%M"),  # item 12
         "periodo": periodo,
         "total": gm["total"],
         "tpr_med": gm["tpr_med"],
@@ -560,13 +698,19 @@ def processar(rows_droz, rows_occ=None):
         "meses": meses_vol,
         "classifs": gm["classifs"],
         "empreendimentos": gm["empreendimentos"],
-        "correl": sorted([e for e in gm["empreendimentos"] if e["taxa_contato"] is not None],
-                         key=lambda x: -x["taxa_contato"]),
         "clusters": gm["clusters"],
+        "canais": gm["canais"],
         "prioridades": gm["prioridades"],
+        "priority_tags": gm["priority_tags"],
         "agentes": gm["agentes"],
-        "occ_meses": occ_meses_payload,
+        "correl": sorted(
+            [e for e in gm["empreendimentos"] if e["taxa_contato"] is not None],
+            key=lambda x: -x["taxa_contato"]
+        ),
+        "occ": occ_lista,
         "por_mes": por_mes,
+        "tags_pendentes": tags_pendentes,
+        "volume_insights": vol_insights,
     }
 
 # ── Uso local ────────────────────────────────────────────────
@@ -593,8 +737,9 @@ if __name__ == "__main__":
     payload = processar(rows_droz, rows_occ)
     print("Tickets únicos:", payload["total"])
     print("TPR med:", payload["tpr_med"], "| TTF med:", payload["ttf_med"])
-    print("OCC meses:", list(payload["occ_meses"].keys()))
-    print("Por mês:", {k: payload["por_mes"][k]["total"] for k in payload["por_mes"]})
+    print("Empreendimentos com dados:", [e["nome"] for e in payload["empreendimentos"] if e["count"]>0])
+    print("Tags pendentes:", len(payload["tags_pendentes"]))
+    print("Volume insights:", payload["volume_insights"])
 
     with open(ARQUIVO_TEMPLATE,"r",encoding="utf-8") as f:
         html = f.read()
