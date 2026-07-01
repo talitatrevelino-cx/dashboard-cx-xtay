@@ -4,48 +4,94 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard CX — Xtay</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23FF6A13'/><text x='50' y='68' text-anchor='middle' font-family='Arial,sans-serif' font-weight='900' font-size='44' fill='white'>CX</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --orange:#FF6A13;--orange-d:#D94F00;--orange-l:#FFF0E6;--orange-m:#FFD9BE;
-  --bg:#FAFAFA;--surface:#FFFFFF;--border:#EDEDED;
+  --bg:#F5F5F7;--surface:#FFFFFF;--border:#E8E8E8;
   --text1:#1A1A1A;--text2:#555;--text3:#999;
-  --green:#22C55E;--amber:#F59E0B;--red:#EF4444;--blue:#4F79E4;
-  --radius:10px;--shadow:0 1px 3px rgba(0,0,0,.07);
+  --green:#22C55E;--green-l:#DCFCE7;--green-t:#15803D;
+  --amber:#F59E0B;--amber-l:#FEF9C3;--amber-t:#92400E;
+  --red:#EF4444;--red-l:#FEE2E2;--red-t:#991B1B;
+  --blue:#4F79E4;--purple:#9B59B6;
+  --radius:10px;--shadow:0 1px 4px rgba(0,0,0,.08);
 }
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text1);font-size:14px;line-height:1.5}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
-.topbar-logo{display:flex;align-items:center;gap:10px}
-.logo-mark{width:28px;height:28px;background:var(--orange);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+
+/* ── TopBar ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.logo-mark{width:30px;height:30px;background:var(--orange);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;letter-spacing:-.5px}
 .topbar-title{font-size:15px;font-weight:600}
 .topbar-sub{font-size:11px;color:var(--text3);margin-left:2px}
-.tabs{display:flex;gap:3px;background:var(--bg);border-radius:8px;padding:3px}
-.tab{padding:5px 14px;border-radius:6px;border:none;background:transparent;font-size:12px;font-weight:500;cursor:pointer;color:var(--text2);transition:all .15s}
+.main-tabs{display:flex;gap:2px;background:#F0F0F0;border-radius:8px;padding:3px}
+.main-tab{padding:5px 16px;border-radius:6px;border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:5px}
+.main-tab.active{background:var(--surface);color:var(--orange);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.period-tabs{display:flex;gap:3px;background:var(--bg);border-radius:8px;padding:3px}
+.tab{padding:4px 12px;border-radius:6px;border:none;background:transparent;font-size:11px;font-weight:500;cursor:pointer;color:var(--text2);transition:all .15s}
 .tab.active{background:var(--orange);color:#fff}
 .tab:hover:not(.active){background:var(--orange-m);color:var(--orange-d)}
-.main{padding:20px 24px;max-width:1320px;margin:0 auto}
-.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:22px 0 10px}
+.ts{font-size:11px;color:var(--text3)}
+
+/* ── Layout ── */
+.main{padding:20px 24px;max-width:1380px;margin:0 auto}
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:24px 0 10px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .g21{display:grid;grid-template-columns:2fr 1fr;gap:14px}
-@media(max-width:900px){.g21{grid-template-columns:1fr}}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:900px){.g2,.g21,.g3{grid-template-columns:1fr}}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
-.card-title{font-size:13px;font-weight:600;margin-bottom:14px}
-.card-sub{font-size:11px;color:var(--text3);margin-left:6px;font-weight:400}
+.card-title{font-size:13px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.card-sub{font-size:11px;color:var(--text3);font-weight:400}
+.ch{position:relative}
+
+/* ── KPIs ── */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px}
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .kpi-icon{width:32px;height:32px;background:var(--orange-l);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
 .kpi-icon svg{width:16px;height:16px;stroke:var(--orange);fill:none;stroke-width:2;stroke-linecap:round}
-.kpi-label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
-.kpi-val{font-size:28px;font-weight:700;margin:3px 0 1px;line-height:1}
+.kpi-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kpi-val{font-size:26px;font-weight:700;margin:3px 0 1px;line-height:1}
 .kpi-sub{font-size:11px;color:var(--text3)}
+.kpi-meta{position:absolute;top:12px;right:12px}
 .kpi.accent{background:var(--orange);border-color:var(--orange-d)}
 .kpi.accent .kpi-icon{background:rgba(255,255,255,.2)}
 .kpi.accent .kpi-icon svg{stroke:#fff}
 .kpi.accent .kpi-label{color:rgba(255,255,255,.75)}
 .kpi.accent .kpi-val{color:#fff}
 .kpi.accent .kpi-sub{color:rgba(255,255,255,.65)}
-.ch{position:relative}
-.classif-row{display:grid;grid-template-columns:240px 1fr 70px 72px 72px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer}
+
+/* ── Pills ── */
+.pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.pill-g{background:var(--green-l);color:var(--green-t)}
+.pill-a{background:var(--amber-l);color:var(--amber-t)}
+.pill-r{background:var(--red-l);color:var(--red-t)}
+.pill-n{background:#F0F0F0;color:var(--text2)}
+
+/* ── Insights de Volume ── */
+.vol-insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.vol-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.vol-card-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:4px}
+.vol-card-val{font-size:20px;font-weight:700;color:var(--text1)}
+.vol-card-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.insight-box{background:var(--orange-l);border:1px solid var(--orange-m);border-radius:8px;padding:12px 14px;font-size:12px;color:#7A2C00;line-height:1.6;margin-top:10px}
+.insight-box strong{color:var(--orange-d)}
+.insight-box.blue{background:#EEF2FF;border-color:#C7D2FE;color:#312E81}
+.insight-box.blue strong{color:#4338CA}
+.insight-box.green{background:var(--green-l);border-color:#BBF7D0;color:#14532D}
+.insight-box.green strong{color:#15803D}
+.insight-box.red{background:var(--red-l);border-color:#FECACA;color:#7F1D1D}
+.insight-box.red strong{color:var(--red-t)}
+
+/* ── Temas (Classificações) ── */
+.classif-head{display:grid;grid-template-columns:220px 1fr 65px 58px 58px 65px;gap:8px;padding:0 0 6px;border-bottom:2px solid var(--border)}
+.classif-head span{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
+.classif-head span:nth-child(n+3){text-align:right}
+.classif-row{display:grid;grid-template-columns:220px 1fr 65px 58px 58px 65px;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s}
 .classif-row:last-child{border-bottom:none}
 .classif-row:hover{background:var(--orange-l);margin:0 -18px;padding:9px 18px;border-radius:6px}
 .classif-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
@@ -53,10 +99,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .classif-bar-wrap{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
 .classif-bar{height:100%;border-radius:4px;transition:width .4s ease}
 .classif-count{font-size:13px;font-weight:600;text-align:right}
+.classif-pct{font-size:12px;color:var(--text2);text-align:right;font-weight:500}
 .classif-time{font-size:12px;color:var(--text2);text-align:right}
-.classif-head{display:grid;grid-template-columns:240px 1fr 70px 72px 72px;gap:10px;padding:0 0 6px;border-bottom:2px solid var(--border)}
-.classif-head span{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
-.classif-head span:nth-child(n+3){text-align:right}
 .tag-detail{display:none;margin:4px 0 8px;padding:12px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
 .tag-detail.open{display:block}
 .tag-item{display:flex;align-items:center;gap:8px;padding:4px 0}
@@ -64,67 +108,148 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tag-item-bar{flex:2;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
 .tag-item-fill{height:100%;border-radius:3px}
 .tag-item-count{font-size:12px;font-weight:600;min-width:28px;text-align:right}
-.emp-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.classif-insight{margin-top:8px;padding:10px 12px;background:var(--bg);border-left:3px solid var(--orange);border-radius:4px;font-size:12px;color:var(--text2);line-height:1.6}
+
+/* ── Empreendimentos ── */
+.emp-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
 .emp-row:last-child{border-bottom:none}
-.emp-name{width:115px;font-size:13px;flex-shrink:0}
-.emp-cluster{width:88px;font-size:11px;color:var(--text3);flex-shrink:0}
+.emp-name{width:110px;font-size:13px;flex-shrink:0;font-weight:500}
+.emp-cluster{width:80px;font-size:11px;color:var(--text3);flex-shrink:0}
 .emp-bar-wrap{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden}
 .emp-bar{height:100%;background:var(--orange);border-radius:4px}
 .emp-count{font-size:13px;font-weight:600;min-width:36px;text-align:right}
-.emp-occ{font-size:11px;color:var(--text3);min-width:46px;text-align:right;flex-shrink:0}
-.taxa-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;min-width:46px;text-align:center;flex-shrink:0}
-.taxa-g{background:#DCFCE7;color:#15803D}
-.taxa-a{background:#FEF9C3;color:#92400E}
-.taxa-r{background:#FEE2E2;color:#991B1B}
+.emp-pct{font-size:11px;color:var(--text3);min-width:40px;text-align:right}
+.emp-occ{font-size:11px;color:var(--text3);min-width:42px;text-align:right;flex-shrink:0}
+.taxa-pill{display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600;min-width:42px;text-align:center;flex-shrink:0}
+.taxa-g{background:var(--green-l);color:var(--green-t)}
+.taxa-a{background:var(--amber-l);color:var(--amber-t)}
+.taxa-r{background:var(--red-l);color:var(--red-t)}
 .emp-head{display:flex;align-items:center;gap:10px;padding:0 0 6px;border-bottom:2px solid var(--border);margin-bottom:2px}
 .emp-head span{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
+
+/* ── Tabelas ── */
 table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);padding:0 8px 8px;border-bottom:1px solid var(--border)}
+thead th{text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);padding:0 8px 8px;border-bottom:2px solid var(--border)}
 thead th:not(:first-child){text-align:right}
 tbody tr:hover{background:var(--orange-l)}
 tbody td{padding:8px;border-bottom:1px solid var(--border);color:var(--text2)}
 tbody td:first-child{color:var(--text1);font-weight:500}
 tbody td:not(:first-child){text-align:right}
-.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
-.pill-g{background:#DCFCE7;color:#15803D}
-.pill-a{background:#FEF9C3;color:#92400E}
-.pill-r{background:#FEE2E2;color:#991B1B}
+
+/* ── Metas ── */
+.meta-ref{font-size:10px;color:var(--text3);margin-top:1px}
+.meta-table{width:100%;border-collapse:collapse}
+.meta-table td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:13px}
+.meta-table tr:last-child td{border-bottom:none}
+.meta-indicator{font-weight:500;color:var(--text1)}
+.meta-target{color:var(--text3);font-size:12px}
+.meta-value{font-weight:600;text-align:right}
+
+/* ── Tags Pendentes ── */
+.tag-pend-list{display:flex;flex-wrap:wrap;gap:8px}
+.tag-pend-item{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:14px;background:#F0F0F0;font-size:12px;color:var(--text1);border:1px solid var(--border)}
+.tag-pend-count{font-weight:700;color:var(--orange)}
+
+/* ── Priority Tags ── */
+.pri-tag-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.pri-tag-row:last-child{border-bottom:none}
+.pri-tag-label{flex:1;font-size:12px;color:var(--text2)}
+.pri-tag-bar{width:120px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;flex-shrink:0}
+.pri-tag-fill{height:100%;border-radius:3px}
+.pri-tag-count{font-size:12px;font-weight:600;min-width:28px;text-align:right}
+
+/* ── Analistas ── */
+.analista-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.analista-nome{font-size:14px;font-weight:600;margin-bottom:8px}
+.analista-metrics{display:flex;flex-wrap:wrap;gap:10px}
+.analista-metric{text-align:center;min-width:60px}
+.analista-metric-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3)}
+.analista-metric-val{font-size:16px;font-weight:700}
+
+/* ── Gerencial Insights ── */
+.g-insight{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.g-insight-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.g-insight-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--orange);display:inline-block}
+.g-insight-body{font-size:13px;color:var(--text1);line-height:1.6}
+.g-insight-body strong{color:var(--orange)}
+
+/* ── Aderência Badge ── */
+.ad-excelente{background:#DCFCE7;color:#14532D}
+.ad-bom{background:#D1FAE5;color:#065F46}
+.ad-medio{background:var(--amber-l);color:var(--amber-t)}
+.ad-ruim{background:#FED7AA;color:#9A3412}
+.ad-alerta{background:var(--red-l);color:var(--red-t)}
+
+/* ── Sinalização de Meta ── */
+.meta-ok{color:var(--green-t);font-size:10px}
+.meta-warn{color:var(--amber-t);font-size:10px}
+.meta-fail{color:var(--red-t);font-size:10px}
+
+/* ── Badges de prioridade ── */
+.badge-alta{background:#FEE2E2;color:#991B1B;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-media{background:#FEF9C3;color:#92400E;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-baixa{background:#DCFCE7;color:#15803D;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+
+/* ── Área Restrita ── */
+.restricted-banner{background:#FEF9C3;border:1px solid #FDE68A;border-radius:8px;padding:8px 14px;font-size:12px;color:#92400E;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
 select{padding:7px 12px;border-radius:8px;border:1px solid var(--border);font-size:13px;width:100%;color:var(--text1);background:var(--surface);margin-bottom:14px;outline:none}
 select:focus{border-color:var(--orange)}
 .footer{text-align:center;font-size:11px;color:var(--text3);padding:24px 0 36px}
 </style>
 </head>
 <body>
+
+<!-- TopBar -->
 <div class="topbar">
-  <div class="topbar-logo">
-    <div class="logo-mark">CX</div>
-    <div><div class="topbar-title">Dashboard CX <span class="topbar-sub">· Xtay</span></div></div>
+  <div class="topbar-left">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="logo-mark">CX</div>
+      <div><div class="topbar-title">Dashboard CX <span class="topbar-sub">· Xtay</span></div></div>
+    </div>
+    <div class="main-tabs">
+      <button class="main-tab active" id="mtab-atendimento" onclick="setMainTab('atendimento')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Atendimento
+      </button>
+      <button class="main-tab" id="mtab-analistas" onclick="setMainTab('analistas')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+        Analistas
+      </button>
+    </div>
   </div>
-  <div style="display:flex;align-items:center;gap:16px">
-    <div class="tabs" id="period-tabs"></div>
-    <span style="font-size:11px;color:var(--text3)" id="ts"></span>
+  <div class="topbar-right">
+    <div class="period-tabs" id="period-tabs"></div>
+    <span class="ts" id="ts"></span>
   </div>
 </div>
-<div class="main">
-  <div class="section-label">Visão geral · <span id="periodo-label"></span></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  SECTION: ATENDIMENTO                                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="main" id="section-atendimento">
+
+  <div class="section-label">Indicadores gerais · <span id="periodo-label"></span></div>
   <div class="kpi-grid">
     <div class="kpi accent">
-      <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
       <div class="kpi-label">Atendimentos</div>
       <div class="kpi-val" id="kpi-total">—</div>
       <div class="kpi-sub">tickets únicos</div>
     </div>
-    <div class="kpi">
+    <div class="kpi" id="kpi-tpr-card">
+      <div class="kpi-meta" id="kpi-tpr-meta"></div>
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
       <div class="kpi-label">1ª resposta (média)</div>
       <div class="kpi-val" id="kpi-tpr">—</div>
-      <div class="kpi-sub">minutos</div>
+      <div class="kpi-sub">minutos · <span style="color:var(--text3)">meta: 5 min</span></div>
     </div>
-    <div class="kpi">
+    <div class="kpi" id="kpi-ttf-card">
+      <div class="kpi-meta" id="kpi-ttf-meta"></div>
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
       <div class="kpi-label">Até fechamento (média)</div>
       <div class="kpi-val" id="kpi-ttf">—</div>
-      <div class="kpi-sub">minutos</div>
+      <div class="kpi-sub">minutos · <span style="color:var(--text3)">meta: 40 min</span></div>
     </div>
     <div class="kpi">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
@@ -134,282 +259,937 @@ select:focus{border-color:var(--orange)}
     </div>
     <div class="kpi">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-      <div class="kpi-label">Maior classificação</div>
-      <div class="kpi-val" style="font-size:15px;margin-top:6px" id="kpi-top-classif">—</div>
+      <div class="kpi-label">Maior tema</div>
+      <div class="kpi-val" style="font-size:14px;margin-top:6px" id="kpi-top-classif">—</div>
       <div class="kpi-sub" id="kpi-top-classif-n"></div>
     </div>
   </div>
 
-  <div class="section-label">Volume de atendimentos</div>
+  <!-- Volume insights — item 13 -->
+  <div class="section-label">Análise de volume</div>
   <div class="card">
-    <div class="card-title">Atendimentos por período <span class="card-sub" id="volume-sub"></span></div>
-    <div class="ch" style="height:220px"><canvas id="chart-vol"></canvas></div>
+    <div class="card-title">Comportamento do volume de atendimentos</div>
+    <div class="vol-insights" id="vol-insights-grid"></div>
+    <div id="vol-insight-text"></div>
+    <div class="card-title" style="margin-top:18px">Atendimentos por período <span class="card-sub" id="volume-sub"></span></div>
+    <div class="ch" style="height:200px"><canvas id="chart-vol"></canvas></div>
   </div>
 
-  <div class="section-label">Motivos de contato</div>
+  <!-- Temas — item 1 (insights proporcionais + %) -->
+  <div class="section-label">Temas e motivos de contato</div>
   <div class="card">
-    <div class="card-title">Volume por classificação <span class="card-sub">· clique para ver top tags</span></div>
+    <div class="card-title">Volume por classificação <span class="card-sub">· clique para expandir tags</span></div>
     <div class="classif-head">
-      <span>Classificação</span><span></span><span>Tickets</span><span>TPR méd.</span><span>TTF méd.</span>
+      <span>Classificação</span><span></span><span>Tickets</span><span>%</span><span>TPR</span><span>TTF</span>
     </div>
     <div id="classif-list"></div>
+    <div id="classif-insight-box" style="margin-top:14px"></div>
   </div>
 
-  <div class="section-label">Empreendimentos · Clusters · Prioridade</div>
+  <!-- Prioridades + Tags em prioridade — item 3 -->
+  <div class="section-label">Prioridades</div>
   <div class="g21">
     <div class="card">
-      <div class="card-title">Volume por empreendimento</div>
+      <div class="card-title">Tags mais frequentes em atendimentos de prioridade</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px" id="pri-tab-btns">
+        <button onclick="setPriTab('Alta')" id="pritab-Alta" class="tab active" style="border-radius:6px;padding:4px 12px">Alta</button>
+        <button onclick="setPriTab('Média')" id="pritab-Média" class="tab" style="border-radius:6px;padding:4px 12px">Média</button>
+        <button onclick="setPriTab('Baixa')" id="pritab-Baixa" class="tab" style="border-radius:6px;padding:4px 12px">Baixa</button>
+      </div>
+      <div id="priority-tags-list"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="card-title">Por prioridade</div>
+        <div class="ch" style="height:160px"><canvas id="chart-prior"></canvas></div>
+        <div id="pri-stats" style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empreendimentos — item 4 (apenas ativos) -->
+  <div class="section-label">Empreendimentos ativos</div>
+  <div class="g21">
+    <div class="card">
+      <div class="card-title">Volume por empreendimento <span class="card-sub">· apenas propriedades ativas</span></div>
       <div id="emp-list"></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:14px">
       <div class="card">
         <div class="card-title">Por cluster</div>
-        <div class="ch" style="height:200px"><canvas id="chart-cluster"></canvas></div>
+        <div class="ch" style="height:180px"><canvas id="chart-cluster"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-title">Por prioridade</div>
-        <div class="ch" style="height:140px"><canvas id="chart-prior"></canvas></div>
+        <div class="card-title">Top motivos por empreendimento</div>
+        <select id="emp-select" onchange="renderEmpDetail()"></select>
+        <div class="ch" style="height:200px"><canvas id="chart-emp-detail"></canvas></div>
       </div>
     </div>
   </div>
 
-  <div class="section-label">Top motivos por empreendimento</div>
+  <!-- Canais — item 2 -->
+  <div class="section-label">Canais de atendimento</div>
   <div class="card">
-    <div class="card-title">Selecione o empreendimento</div>
-    <select id="emp-select" onchange="renderEmpDetail()"></select>
-    <div class="ch" style="height:280px"><canvas id="chart-emp-detail"></canvas></div>
+    <div class="card-title">Distribuição por canal</div>
+    <div id="canais-list"></div>
   </div>
 
-  <div class="section-label">Performance por analista</div>
+  <!-- Limpeza por empreendimento — item 9 -->
+  <div class="section-label">Limpeza · ocorrências por empreendimento</div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Volume de tickets de limpeza por empreendimento</div>
+      <div id="limp-emp-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Distribuição (%)</div>
+      <div class="ch" style="height:220px"><canvas id="chart-limp-emp"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Manutenção por empreendimento — item 9 -->
+  <div class="section-label">Manutenção · ocorrências por empreendimento</div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Volume de tickets de manutenção por empreendimento</div>
+      <div id="manut-emp-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Distribuição (%)</div>
+      <div class="ch" style="height:220px"><canvas id="chart-manut-emp"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Tendências semanais -->
+  <div class="section-label">Tendência semanal</div>
   <div class="card">
+    <div class="card-title">Evolução por semana</div>
+    <div class="ch" style="height:180px"><canvas id="chart-semanal"></canvas></div>
+  </div>
+
+  <!-- Insights Estratégicos — item 1 -->
+  <div class="section-label">Insights estratégicos</div>
+  <div id="strategic-insights" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px"></div>
+
+  <!-- Capacidade Operacional — item 14 -->
+  <div class="section-label">Capacidade operacional · dados de reservas e ocupação</div>
+  <div class="card">
+    <div class="card-title">Reservas, ocupação e taxa de contato por empreendimento</div>
     <table>
       <thead><tr>
-        <th>Analista</th><th>Tickets</th><th>TPR méd. (min)</th><th>TTF méd. (min)</th><th>Msgs/ticket</th>
+        <th>Empreendimento</th>
+        <th style="text-align:right">Un. Ocupadas</th>
+        <th style="text-align:right">Ocupação</th>
+        <th style="text-align:right">Tickets CX</th>
+        <th style="text-align:right">Taxa Contato</th>
+      </tr></thead>
+      <tbody id="occ-tbody"></tbody>
+    </table>
+    <div id="occ-insight" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Tags Pendentes — item 10 -->
+  <div class="section-label">Tags pendentes de categorização</div>
+  <div class="card">
+    <div class="card-title">Tags ainda não classificadas em nenhuma categoria
+      <span class="card-sub">· revise periodicamente para manter a taxonomia atualizada</span>
+    </div>
+    <div id="tags-pendentes-list" class="tag-pend-list"></div>
+    <div id="tags-pendentes-empty" style="display:none;font-size:13px;color:var(--text3)">
+      Todas as tags estão classificadas.
+    </div>
+  </div>
+
+</div><!-- /section-atendimento -->
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  SECTION: ANALISTAS                                         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="main" id="section-analistas" style="display:none">
+
+  <div class="restricted-banner">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Área de gestão — dados individuais de performance da equipe. Uso restrito à coordenação.
+  </div>
+
+  <!-- Metas da Operação — item 7 -->
+  <div class="section-label">Metas oficiais da operação</div>
+  <div class="card" style="max-width:500px">
+    <div class="card-title">Referências para o período</div>
+    <table class="meta-table">
+      <tr><td class="meta-indicator">Tempo de 1ª Resposta</td><td class="meta-target">≤ 5 min</td><td class="meta-value" id="meta-tpr-val"></td></tr>
+      <tr><td class="meta-indicator">Tempo até Fechamento</td><td class="meta-target">≤ 40 min</td><td class="meta-value" id="meta-ttf-val"></td></tr>
+      <tr><td class="meta-indicator">NPS</td><td class="meta-target">≥ 95%</td><td class="meta-value">N/D <span style="font-size:10px;color:var(--text3)">(configurar)</span></td></tr>
+      <tr><td class="meta-indicator">Aderência de Pesquisa</td><td class="meta-target">≥ 30%</td><td class="meta-value">N/D <span style="font-size:10px;color:var(--text3)">(configurar)</span></td></tr>
+    </table>
+  </div>
+
+  <!-- Performance Individual — itens 6 e 7 -->
+  <div class="section-label">Performance individual por analista</div>
+  <div class="card">
+    <div style="overflow-x:auto">
+    <table id="agentes-table">
+      <thead><tr>
+        <th>Analista</th>
+        <th>Tickets</th>
+        <th>% do total</th>
+        <th>TPR méd. (min)</th>
+        <th>TTF méd. (min)</th>
+        <th>Msgs/ticket</th>
+        <th>NPS</th>
+        <th>Aderência</th>
+        <th>Classif. Aderência</th>
       </tr></thead>
       <tbody id="agentes-tbody"></tbody>
     </table>
+    </div>
+    <div style="margin-top:12px;font-size:11px;color:var(--text3)">
+      <strong>NPS e Aderência de Pesquisa:</strong> Para habilitar estes indicadores, adicione as colunas correspondentes na planilha de atendimentos (col 25 = NPS do ticket, col 26 = pesquisa respondida 1/0) e atualize a exportação do Droz.
+    </div>
   </div>
-</div>
+
+  <!-- Aderência classificação — legenda -->
+  <div class="section-label">Legenda · Aderência de Pesquisa</div>
+  <div class="card" style="max-width:420px">
+    <div class="card-title">Classificação por faixa</div>
+    <table>
+      <thead><tr><th>Faixa</th><th>Classificação</th></tr></thead>
+      <tbody>
+        <tr><td>≥ 30%</td><td><span class="pill ad-excelente">Excelente</span></td></tr>
+        <tr><td>27% – 29,9%</td><td><span class="pill ad-bom">Bom</span></td></tr>
+        <tr><td>21% – 26,9%</td><td><span class="pill ad-medio">Médio</span></td></tr>
+        <tr><td>15% – 20,9%</td><td><span class="pill ad-ruim">Ruim</span></td></tr>
+        <tr><td>&lt; 15%</td><td><span class="pill ad-alerta">Alerta Máximo</span></td></tr>
+      </tbody>
+    </table>
+    <div class="insight-box" style="margin-top:12px">
+      <strong>Atenção:</strong> Um NPS elevado só é representativo quando sustentado por uma amostra adequada. A aderência indica se a quantidade de pesquisas respondidas é suficiente para validar o NPS do analista.
+    </div>
+  </div>
+
+  <!-- Insights Gerenciais — item 8 -->
+  <div class="section-label">Insights gerenciais automáticos</div>
+  <div id="gerencial-insights" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px"></div>
+
+</div><!-- /section-analistas -->
+
 <div class="footer" id="footer"></div>
+
 <script>
-var D=__DATA__;
-var chartVol=null,chartCluster=null,chartPrior=null,chartEmpDet=null;
-var activeMonth='total',openClassif=null;
+var D = __DATA__;
+var chartVol=null, chartCluster=null, chartPrior=null, chartEmpDet=null;
+var chartLimpEmp=null, chartManutEmp=null, chartSemanal=null;
+var activeMonth='total', openClassif=null, activePriTab='Alta';
+var activeMainTab='atendimento';
 
-// Retorna o dataset do período ativo
-function getD(){
-  if(activeMonth==='total') return D;
-  return D.por_mes[activeMonth]||D;
+// ── Constantes de Meta ──────────────────────────────────────
+var META_TPR = 5;
+var META_TTF = 40;
+var META_NPS = 95;
+var META_ADERENCIA = 30;
+
+// ── Insights estratégicos por categoria ─────────────────────
+var INSIGHTS_CLASSIF = {
+  recepcao_digital: function(pct, top) {
+    var t = top||'dúvidas de check-in';
+    return '<strong>'+pct+'%</strong> dos atendimentos referem-se à <strong>Recepção Digital</strong>, concentrados principalmente em '+t+'. Considere revisar os materiais de orientação ao hóspede e o fluxo de self check-in junto às equipes de Produto e Marketing, reduzindo dúvidas recorrentes.';
+  },
+  tech: function(pct, top) {
+    var t = top||'falhas de acesso';
+    return '<strong>'+pct+'%</strong> dos atendimentos relatam <strong>problemas tecnológicos</strong> ('+t+'). Recomenda-se verificar bugs recorrentes com o time de Produto e avaliar melhoria nas mensagens de erro apresentadas ao hóspede.';
+  },
+  gestao_reservas: function(pct, top) {
+    var t = top||'prorrogações e cancelamentos';
+    return '<strong>'+pct+'%</strong> dos atendimentos envolvem <strong>Gestão de Reservas</strong> ('+t+'). Considere revisar se as políticas estão claras na plataforma de reservas e se os hóspedes têm acesso fácil à autogestão.';
+  },
+  comercial: function(pct, top) {
+    var t = top||'cotações e vendas';
+    return '<strong>'+pct+'%</strong> dos atendimentos são de natureza <strong>Comercial</strong> ('+t+'). Analise a possibilidade de criar um fluxo dedicado para leads, aliviando a fila de atendimento operacional.';
+  },
+  duvidas_gerais: function(pct, top) {
+    var t = top||'dúvidas diversas';
+    return '<strong>'+pct+'%</strong> dos atendimentos são <strong>Dúvidas Gerais</strong> ('+t+'). Alta incidência pode indicar lacuna de informação na jornada do hóspede. Considere melhorar o FAQ e as comunicações pré-chegada.';
+  },
+  servicos: function(pct, top) {
+    return '<strong>'+pct+'%</strong> dos atendimentos envolvem <strong>Solicitações de Serviço</strong>. Avalie quais solicitações poderiam ser automatizadas ou autoatendidas via aplicativo.';
+  },
+  manutencao: function(pct, top) {
+    return '<strong>'+pct+'%</strong> dos atendimentos envolvem <strong>Manutenção</strong>. Alto volume pode indicar necessidade de revisão dos protocolos preventivos junto à equipe de operações.';
+  },
+  limpeza: function(pct, top) {
+    return '<strong>'+pct+'%</strong> dos atendimentos relatam <strong>Problemas com Limpeza</strong>. Envolva a equipe de Governança para investigar a causa raiz e revisar os processos de checklist.';
+  },
+  operacional: function(pct, top) {
+    return '<strong>'+pct+'%</strong> dos atendimentos são de <strong>Gestão Operacional</strong>. Reclamações frequentes de barulho ou estadia podem ser correlacionadas à ocupação — cruzar com dados de OCC pode revelar padrões.';
+  },
+  improdutivos: function(pct, top) {
+    return '<strong>'+pct+'%</strong> dos atendimentos foram <strong>Improdutivos</strong> (sem retorno ou falta de interação). Avalie estratégias de follow-up automatizado para reduzir esse volume.';
+  },
+};
+
+// ── Navegação Principal ────────────────────────────────────
+function setMainTab(tab) {
+  activeMainTab = tab;
+  document.getElementById('section-atendimento').style.display = tab==='atendimento' ? 'block' : 'none';
+  document.getElementById('section-analistas').style.display = tab==='analistas' ? 'block' : 'none';
+  document.getElementById('mtab-atendimento').classList.toggle('active', tab==='atendimento');
+  document.getElementById('mtab-analistas').classList.toggle('active', tab==='analistas');
+  if(tab==='analistas') { renderAgentes(); renderGerencialInsights(); renderMetasSummary(); }
 }
 
-// Label do período ativo
-function getLabel(){
+// ── Período ─────────────────────────────────────────────────
+function getD() {
+  return activeMonth==='total' ? D : (D.por_mes[activeMonth]||D);
+}
+function getLabel() {
   if(activeMonth==='total') return D.periodo;
-  var pm=D.por_mes[activeMonth];
-  return pm?(pm.label+' '+activeMonth.slice(0,4)):D.periodo;
+  var pm = D.por_mes[activeMonth];
+  return pm ? (pm.label+' '+activeMonth.slice(0,4)) : D.periodo;
 }
+function fmt(n,d) { d=d||1; if(n==null||n===undefined) return '—'; return(+n).toFixed(d); }
+function fmtPct(n) { if(n==null) return '—'; return n.toFixed(1)+'%'; }
 
-function fmt(n,d){d=d||1;if(n==null||n===undefined)return'—';return(+n).toFixed(d);}
-
-// Constrói as abas de período dinamicamente
-function buildPeriodTabs(){
-  var keys=['total'].concat(Object.keys(D.por_mes));
-  var labels={'total':'Total'};
+function buildPeriodTabs() {
+  var keys = ['total'].concat(Object.keys(D.por_mes));
+  var labels = {total:'Total'};
   Object.keys(D.por_mes).forEach(function(k){labels[k]=D.por_mes[k].label;});
-  var html='';
+  var html = '';
   keys.forEach(function(k){
-    html+='<button class="tab'+(k===activeMonth?' active':'')+'" onclick="setMonth(\''+k+'\')">'+labels[k]+'</button>';
+    html += '<button class="tab'+(k===activeMonth?' active':'')+'" onclick="setMonth(\''+k+'\')">'+labels[k]+'</button>';
   });
-  document.getElementById('period-tabs').innerHTML=html;
+  document.getElementById('period-tabs').innerHTML = html;
 }
 
-function setMonth(m){
-  activeMonth=m;
+function setMonth(m) {
+  activeMonth = m;
   buildPeriodTabs();
   renderAll();
 }
 
-function renderAll(){
+function renderAll() {
   renderKPIs();
+  renderVolumeInsights();
   renderVolume();
   renderClassifs();
+  renderPriTags();
+  renderPrioridade();
   renderEmpreendimentos();
   renderClusters();
-  renderPrioridade();
-  renderAgentes();
+  renderCanais();
+  renderLimpezaEmp();
+  renderManutencaoEmp();
+  renderSemanal();
+  renderStrategicInsights();
+  renderOCC();
+  renderTagsPendentes();
 }
 
-function renderKPIs(){
-  var d=getD();
-  document.getElementById('kpi-total').textContent=d.total.toLocaleString('pt-BR');
-  document.getElementById('kpi-tpr').textContent=fmt(d.tpr_med);
-  document.getElementById('kpi-ttf').textContent=fmt(d.ttf_med);
-  document.getElementById('periodo-label').textContent=getLabel();
-  document.getElementById('ts').textContent='Gerado em '+D.gerado_em;
-  document.getElementById('footer').textContent='Dashboard CX Xtay · '+D.gerado_em+' · '+D.periodo;
-  document.getElementById('kpi-empreend').textContent=d.empreendimentos.filter(function(e){return e.count>0;}).length;
-  var top=d.classifs.slice().sort(function(a,b){return b.count-a.count;})[0];
-  if(top){document.getElementById('kpi-top-classif').textContent=top.label;document.getElementById('kpi-top-classif-n').textContent=top.count.toLocaleString('pt-BR')+' tickets';}
+// ── KPIs ────────────────────────────────────────────────────
+function metaPill(val, meta, invertido) {
+  if(val==null) return '';
+  var ok = invertido ? val>=meta : val<=meta;
+  var warn = invertido ? val>=(meta*0.9) : val<=(meta*1.5);
+  var cls = ok ? 'pill-g' : warn ? 'pill-a' : 'pill-r';
+  var icon = ok ? '✓' : '!';
+  return '<span class="pill '+cls+'">'+icon+'</span>';
 }
 
-function renderVolume(){
-  var labels,data,isBar;
-  if(activeMonth==='total'){
-    // Total: mostra por mês
-    labels=D.meses.map(function(x){return x.d;});
-    data=D.meses.map(function(x){return x.c;});
-    isBar=true;
-    document.getElementById('volume-sub').textContent='· por mês';
-  } else {
-    // Mês específico: mostra por dia
-    var pm=D.por_mes[activeMonth];
-    labels=(pm&&pm.dias)?pm.dias.map(function(x){return x.d;}):[]; 
-    data=(pm&&pm.dias)?pm.dias.map(function(x){return x.c;}):[]; 
-    isBar=false;
-    document.getElementById('volume-sub').textContent='· por dia';
+function renderKPIs() {
+  var d = getD();
+  document.getElementById('kpi-total').textContent = d.total.toLocaleString('pt-BR');
+  document.getElementById('kpi-tpr').textContent = fmt(d.tpr_med);
+  document.getElementById('kpi-ttf').textContent = fmt(d.ttf_med);
+  document.getElementById('periodo-label').textContent = getLabel();
+  document.getElementById('ts').textContent = 'Gerado em ' + D.gerado_em;
+  document.getElementById('footer').textContent = 'Dashboard CX Xtay · '+D.gerado_em+' · '+D.periodo;
+  document.getElementById('kpi-empreend').textContent = d.empreendimentos.filter(function(e){return e.count>0;}).length;
+  document.getElementById('kpi-tpr-meta').innerHTML = metaPill(d.tpr_med, META_TPR, false);
+  document.getElementById('kpi-ttf-meta').innerHTML = metaPill(d.ttf_med, META_TTF, false);
+
+  var top = d.classifs.slice().sort(function(a,b){return b.count-a.count;})[0];
+  if(top && top.count>0) {
+    document.getElementById('kpi-top-classif').textContent = top.label;
+    document.getElementById('kpi-top-classif-n').textContent = top.count.toLocaleString('pt-BR')+' tickets ('+top.pct+'%)';
   }
-  if(chartVol)chartVol.destroy();
-  chartVol=new Chart(document.getElementById('chart-vol'),{
-    type:isBar?'bar':'line',
+}
+
+// ── Volume Insights — item 13 ────────────────────────────────
+function renderVolumeInsights() {
+  var vi = (activeMonth==='total') ? D.volume_insights : (D.por_mes[activeMonth]||{}).volume_insights;
+  var grid = document.getElementById('vol-insights-grid');
+  var txtBox = document.getElementById('vol-insight-text');
+  if(!vi || !vi.max_day) { grid.innerHTML=''; txtBox.innerHTML=''; return; }
+
+  var trendCls = vi.trend_dir==='crescimento' ? 'var(--red)' : vi.trend_dir==='redução' ? 'var(--green)' : 'var(--text2)';
+  var trendTxt = vi.trend_pct!=null ? ((vi.trend_pct>0?'+':'')+vi.trend_pct+'% vs semana anterior') : 'dados insuficientes para tendência';
+
+  grid.innerHTML =
+    '<div class="vol-card"><div class="vol-card-label">Pico do período</div><div class="vol-card-val">'+vi.max_day.count+'</div><div class="vol-card-sub">'+vi.max_day.date_fmt+'</div></div>'+
+    '<div class="vol-card"><div class="vol-card-label">Menor volume</div><div class="vol-card-val">'+vi.min_day.count+'</div><div class="vol-card-sub">'+vi.min_day.date_fmt+'</div></div>'+
+    '<div class="vol-card"><div class="vol-card-label">Média diária</div><div class="vol-card-val">'+vi.avg_daily+'</div><div class="vol-card-sub">atendimentos/dia</div></div>'+
+    '<div class="vol-card"><div class="vol-card-label">Tendência</div><div class="vol-card-val" style="font-size:14px;color:'+trendCls+'">'+vi.trend_dir.charAt(0).toUpperCase()+vi.trend_dir.slice(1)+'</div><div class="vol-card-sub">'+trendTxt+'</div></div>'+
+    '<div class="vol-card"><div class="vol-card-label">Dias analisados</div><div class="vol-card-val">'+vi.total_dias+'</div><div class="vol-card-sub">dias com dados</div></div>';
+
+  // Interpretação executiva
+  var insText = 'O pico de volume ocorreu no dia <strong>'+vi.max_day.date_fmt+'</strong> com <strong>'+vi.max_day.count+' atendimentos</strong>. ';
+  insText += 'A média diária no período é de <strong>'+vi.avg_daily+' atendimentos/dia</strong>. ';
+  if(vi.trend_pct!=null) {
+    if(vi.trend_dir==='crescimento') insText += 'A tendência recente é de <strong>crescimento</strong> ('+vi.trend_pct+'%), o que requer atenção ao dimensionamento da equipe.';
+    else if(vi.trend_dir==='redução') insText += 'A tendência recente mostra <strong>redução</strong> de volume ('+vi.trend_pct+'%), o que pode indicar estabilização ou menor demanda.';
+    else insText += 'O volume mantém-se <strong>estável</strong> nas últimas semanas.';
+  }
+  txtBox.innerHTML = '<div class="insight-box">'+insText+'</div>';
+}
+
+// ── Volume Chart ─────────────────────────────────────────────
+function renderVolume() {
+  var labels, data, isBar;
+  if(activeMonth==='total') {
+    labels = D.meses.map(function(x){return x.d;});
+    data = D.meses.map(function(x){return x.c;});
+    isBar = true;
+    document.getElementById('volume-sub').textContent = '· por mês';
+  } else {
+    var pm = D.por_mes[activeMonth];
+    labels = (pm&&pm.dias)?pm.dias.map(function(x){return x.d;}):[];
+    data = (pm&&pm.dias)?pm.dias.map(function(x){return x.c;}):[];
+    isBar = false;
+    document.getElementById('volume-sub').textContent = '· por dia';
+  }
+  if(chartVol) chartVol.destroy();
+  chartVol = new Chart(document.getElementById('chart-vol'),{
+    type: isBar?'bar':'line',
     data:{labels:labels,datasets:[{data:data,borderColor:'#FF6A13',
       backgroundColor:isBar?'rgba(255,106,19,.75)':'rgba(255,106,19,.08)',
       borderWidth:2,pointRadius:isBar?0:3,pointBackgroundColor:'#FF6A13',
       fill:!isBar,tension:0.35,borderRadius:6}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:function(c){return c.parsed.y+' tickets';}}}},
       scales:{x:{grid:{display:false},ticks:{maxTicksLimit:14,font:{size:11}}},
               y:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}}}}
   });
 }
 
-function renderClassifs(){
-  var d=getD();
-  var max=Math.max.apply(null,d.classifs.map(function(c){return c.count;}).concat([1]));
-  var html='';
+// ── Temas (Classificações) — itens 1 e 2 ──────────────────
+function renderClassifs() {
+  var d = getD();
+  var max = Math.max.apply(null, d.classifs.map(function(c){return c.count;}).concat([1]));
+  var html = '';
   d.classifs.forEach(function(c){
-    var barPct=Math.round(c.count/max*100);
-    var tags=c.top_tags.length===0?'<span style="font-size:12px;color:var(--text3)">Sem dados.</span>':
-      c.top_tags.map(function(t){var w=Math.round(t.count/c.top_tags[0].count*100);
-        return'<div class="tag-item"><span class="tag-item-label">'+t.label+'</span><div class="tag-item-bar"><div class="tag-item-fill" style="width:'+w+'%;background:'+c.cor+'"></div></div><span class="tag-item-count">'+t.count+'</span></div>';
+    if(c.count===0) return;
+    var barPct = Math.round(c.count/max*100);
+    var tags = c.top_tags.length===0?'<span style="font-size:12px;color:var(--text3)">Sem dados.</span>':
+      c.top_tags.map(function(t){
+        var w = Math.round(t.count/c.top_tags[0].count*100);
+        var pct = d.total>0 ? ' ('+Math.round(t.count/d.total*100)+'%)' : '';
+        return '<div class="tag-item"><span class="tag-item-label">'+t.label+'<span style="color:var(--text3);font-size:11px">'+pct+'</span></span>'+
+          '<div class="tag-item-bar"><div class="tag-item-fill" style="width:'+w+'%;background:'+c.cor+'"></div></div>'+
+          '<span class="tag-item-count">'+t.count+'</span></div>';
       }).join('');
-    html+='<div class="classif-row" onclick="toggleClassif(\''+c.id+'\')">'+
+    // Insight por categoria
+    var fn = INSIGHTS_CLASSIF[c.id];
+    var insightHtml = '';
+    if(fn) {
+      var top1 = c.top_tags.length>0 ? c.top_tags[0].label.toLowerCase() : '';
+      insightHtml = '<div class="classif-insight">'+fn(c.pct, top1)+'</div>';
+    }
+    html += '<div class="classif-row" onclick="toggleClassif(\''+c.id+'\')">'+
       '<span class="classif-name"><span class="classif-dot" style="background:'+c.cor+'"></span>'+c.label+'</span>'+
       '<div class="classif-bar-wrap"><div class="classif-bar" style="width:'+barPct+'%;background:'+c.cor+'"></div></div>'+
       '<span class="classif-count">'+c.count.toLocaleString('pt-BR')+'</span>'+
+      '<span class="classif-pct">'+c.pct+'%</span>'+
       '<span class="classif-time">'+fmt(c.tpr_med)+' min</span>'+
       '<span class="classif-time">'+fmt(c.ttf_med)+' min</span></div>'+
-      '<div class="tag-detail" id="detail-'+c.id+'">'+tags+'</div>';
+      '<div class="tag-detail" id="detail-'+c.id+'">'+tags+insightHtml+'</div>';
   });
-  document.getElementById('classif-list').innerHTML=html;
-  openClassif=null;
+  document.getElementById('classif-list').innerHTML = html || '<span style="font-size:13px;color:var(--text3)">Sem dados no período.</span>';
+
+  // Insight geral do top tema
+  var top = d.classifs.slice().sort(function(a,b){return b.count-a.count;}).filter(function(c){return c.count>0;})[0];
+  var box = document.getElementById('classif-insight-box');
+  if(top && INSIGHTS_CLASSIF[top.id]) {
+    var top1 = top.top_tags.length>0 ? top.top_tags[0].label.toLowerCase() : '';
+    box.innerHTML = '<div class="insight-box"><strong>Destaque do período:</strong> '+INSIGHTS_CLASSIF[top.id](top.pct, top1)+'</div>';
+  } else { box.innerHTML = ''; }
+  openClassif = null;
 }
 
-function toggleClassif(id){
-  var panel=document.getElementById('detail-'+id);
-  if(openClassif&&openClassif!==id){var prev=document.getElementById('detail-'+openClassif);if(prev)prev.classList.remove('open');}
-  var isOpen=panel.classList.contains('open');
+function toggleClassif(id) {
+  var panel = document.getElementById('detail-'+id);
+  if(openClassif && openClassif!==id){var prev=document.getElementById('detail-'+openClassif);if(prev)prev.classList.remove('open');}
+  var isOpen = panel.classList.contains('open');
   panel.classList.toggle('open',!isOpen);
-  openClassif=isOpen?null:id;
+  openClassif = isOpen ? null : id;
 }
 
-function renderEmpreendimentos(){
-  var d=getD();
-  var max=Math.max.apply(null,d.empreendimentos.map(function(e){return e.count;}).concat([1]));
-  var temOcc=d.empreendimentos.some(function(e){return e.taxa_contato!=null;});
-  var head='';
-  if(temOcc){
-    head='<div class="emp-head">'+
-      '<span style="width:115px;flex-shrink:0">Empreendimento</span>'+
-      '<span style="width:88px;flex-shrink:0">Cluster</span>'+
-      '<span style="flex:1"></span>'+
-      '<span style="min-width:36px;text-align:right">Tickets</span>'+
-      '<span style="min-width:46px;text-align:right">Ocup.</span>'+
-      '<span style="min-width:46px;text-align:center">Taxa cx</span>'+
-    '</div>';
+// ── Priority Tags — item 3 ──────────────────────────────────
+function setPriTab(lv) {
+  activePriTab = lv;
+  ['Alta','Média','Baixa'].forEach(function(l){
+    var b = document.getElementById('pritab-'+l);
+    if(b) b.classList.toggle('active', l===lv);
+  });
+  renderPriTags();
+}
+
+function renderPriTags() {
+  var d = getD();
+  var pt = d.priority_tags || {};
+  var tags = pt[activePriTab] || [];
+  var max = tags.length>0 ? tags[0].count : 1;
+  var cols = {'Alta':'#EF4444','Média':'#F59E0B','Baixa':'#22C55E'};
+  var cor = cols[activePriTab] || '#999';
+  var html = tags.length===0
+    ? '<span style="font-size:12px;color:var(--text3)">Sem atendimentos nesta prioridade no período.</span>'
+    : tags.map(function(t){
+        var w = Math.round(t.count/max*100);
+        return '<div class="pri-tag-row"><span class="pri-tag-label">'+t.label+'</span>'+
+          '<div class="pri-tag-bar"><div class="pri-tag-fill" style="width:'+w+'%;background:'+cor+'"></div></div>'+
+          '<span class="pri-tag-count">'+t.count+'</span></div>';
+      }).join('');
+  document.getElementById('priority-tags-list').innerHTML = html;
+}
+
+function renderPrioridade() {
+  var d = getD();
+  if(chartPrior) chartPrior.destroy();
+  chartPrior = new Chart(document.getElementById('chart-prior'),{
+    type:'bar',
+    data:{labels:['Alta','Média','Baixa'],
+      datasets:[{data:[d.prioridades.Alta,d.prioridades.Media,d.prioridades.Baixa],
+        backgroundColor:['#EF4444','#F59E0B','#22C55E'],borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:function(c){var t=d.prioridades.Alta+d.prioridades.Media+d.prioridades.Baixa;return c.parsed.y+' ('+Math.round(c.parsed.y/t*100)+'%)';}}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}}}}
+  });
+  var tot = d.prioridades.Alta + d.prioridades.Media + d.prioridades.Baixa;
+  var priStats = document.getElementById('pri-stats');
+  if(priStats && tot>0) {
+    priStats.innerHTML =
+      '<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:#EF4444">'+Math.round(d.prioridades.Alta/tot*100)+'%</div><div style="font-size:10px;color:var(--text3)">Alta</div></div>'+
+      '<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:#F59E0B">'+Math.round(d.prioridades.Media/tot*100)+'%</div><div style="font-size:10px;color:var(--text3)">Média</div></div>'+
+      '<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:#22C55E">'+Math.round(d.prioridades.Baixa/tot*100)+'%</div><div style="font-size:10px;color:var(--text3)">Baixa</div></div>';
   }
-  var html='';
+}
+
+// ── Empreendimentos — item 4 ─────────────────────────────────
+function renderEmpreendimentos() {
+  var d = getD();
+  var max = Math.max.apply(null, d.empreendimentos.map(function(e){return e.count;}).concat([1]));
+  var temOcc = d.empreendimentos.some(function(e){return e.taxa_contato!=null;});
+  var head = '<div class="emp-head">'+
+    '<span style="width:110px;flex-shrink:0">Empreendimento</span>'+
+    '<span style="width:80px;flex-shrink:0">Cluster</span>'+
+    '<span style="flex:1"></span>'+
+    '<span style="min-width:36px;text-align:right">Tickets</span>'+
+    '<span style="min-width:40px;text-align:right">%</span>'+
+    (temOcc ? '<span style="min-width:42px;text-align:right">Ocup.</span><span style="min-width:42px;text-align:center">Taxa CX</span>' : '')+
+    '</div>';
+  var html = '';
   d.empreendimentos.forEach(function(e){
-    var taxa=e.taxa_contato;
-    var taxaHtml='';
-    if(taxa!=null){
-      var cls=taxa>=60?'taxa-r':taxa>=40?'taxa-a':'taxa-g';
-      taxaHtml='<span class="taxa-pill '+cls+'">'+taxa.toFixed(0)+'%</span>';
+    var taxa = e.taxa_contato;
+    var taxaHtml = '';
+    if(temOcc) {
+      if(taxa!=null){var cls=taxa>=60?'taxa-r':taxa>=40?'taxa-a':'taxa-g';taxaHtml='<span class="taxa-pill '+cls+'">'+taxa.toFixed(0)+'%</span>';}
+      else taxaHtml='<span class="taxa-pill" style="background:#F0F0F0;color:var(--text3)">—</span>';
     }
-    var occHtml=e.occ_pct!=null?'<span class="emp-occ">'+e.occ_pct.toFixed(0)+'%</span>':'<span class="emp-occ">—</span>';
-    html+='<div class="emp-row">'+
+    var occHtml = temOcc ? (e.occ_pct!=null?'<span class="emp-occ">'+e.occ_pct.toFixed(0)+'%</span>':'<span class="emp-occ">—</span>') : '';
+    html += '<div class="emp-row">'+
       '<span class="emp-name">'+e.nome+'</span>'+
       '<span class="emp-cluster">'+e.cluster+'</span>'+
       '<div class="emp-bar-wrap"><div class="emp-bar" style="width:'+Math.round(e.count/max*100)+'%"></div></div>'+
-      '<span class="emp-count">'+e.count+'</span>'+occHtml+taxaHtml+'</div>';
+      '<span class="emp-count">'+e.count+'</span>'+
+      '<span class="emp-pct">'+e.pct+'%</span>'+
+      occHtml+taxaHtml+'</div>';
   });
-  document.getElementById('emp-list').innerHTML=head+html;
-  var sel=document.getElementById('emp-select');
-  var prev=sel.value;
-  sel.innerHTML=d.empreendimentos.map(function(e){
-    return'<option value="'+e.nome+'">'+e.nome+' ('+e.count+')</option>';
+  document.getElementById('emp-list').innerHTML = head + html;
+
+  // Select para detalhe
+  var sel = document.getElementById('emp-select');
+  var prev = sel.value;
+  sel.innerHTML = d.empreendimentos.filter(function(e){return e.count>0;}).map(function(e){
+    return '<option value="'+e.nome+'">'+e.nome+' ('+e.count+')</option>';
   }).join('');
-  if(prev){
-    var found=d.empreendimentos.find(function(e){return e.nome===prev;});
-    if(found) sel.value=prev;
-  }
+  if(prev){ var found=d.empreendimentos.find(function(e){return e.nome===prev;}); if(found) sel.value=prev; }
   renderEmpDetail();
 }
 
-function renderEmpDetail(){
-  var d=getD();
-  var nome=document.getElementById('emp-select').value;
-  var emp=null; d.empreendimentos.forEach(function(e){if(e.nome===nome)emp=e;});
+function renderEmpDetail() {
+  var d = getD();
+  var nome = document.getElementById('emp-select').value;
+  var emp = null; d.empreendimentos.forEach(function(e){if(e.nome===nome)emp=e;});
   if(!emp||emp.top_motivos.length===0){if(chartEmpDet)chartEmpDet.destroy();return;}
-  var labels=emp.top_motivos.map(function(m){return m.label;}).reverse();
-  var data=emp.top_motivos.map(function(m){return m.count;}).reverse();
-  if(chartEmpDet)chartEmpDet.destroy();
-  chartEmpDet=new Chart(document.getElementById('chart-emp-detail'),{
+  var labels = emp.top_motivos.map(function(m){return m.label;}).reverse();
+  var data = emp.top_motivos.map(function(m){return m.count;}).reverse();
+  if(chartEmpDet) chartEmpDet.destroy();
+  chartEmpDet = new Chart(document.getElementById('chart-emp-detail'),{
     type:'bar',data:{labels:labels,datasets:[{data:data,backgroundColor:'#FF6A13',borderRadius:4}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
       scales:{x:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
   });
 }
 
-function renderClusters(){
-  var d=getD();
-  if(chartCluster)chartCluster.destroy();
-  chartCluster=new Chart(document.getElementById('chart-cluster'),{
+function renderClusters() {
+  var d = getD();
+  if(chartCluster) chartCluster.destroy();
+  var filtered = d.clusters.filter(function(c){return c.count>0;});
+  chartCluster = new Chart(document.getElementById('chart-cluster'),{
     type:'doughnut',
-    data:{labels:d.clusters.map(function(c){return c.nome;}),
-      datasets:[{data:d.clusters.map(function(c){return c.count;}),
-        backgroundColor:['#FF6A13','#4F79E4','#9B59B6','#22C55E','#E67E22','#F59E0B','#1ABC9C'],borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,
+    data:{labels:filtered.map(function(c){return c.nome;}),
+      datasets:[{data:filtered.map(function(c){return c.count;}),
+        backgroundColor:['#FF6A13','#4F79E4','#9B59B6','#22C55E','#E67E22','#F59E0B','#1ABC9C'],borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
       plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:10}}}}
   });
 }
 
-function renderPrioridade(){
-  var d=getD();
-  if(chartPrior)chartPrior.destroy();
-  chartPrior=new Chart(document.getElementById('chart-prior'),{
+// ── Canais — item 2 ──────────────────────────────────────────
+function renderCanais() {
+  var d = getD();
+  var canais = d.canais || [];
+  var total = canais.reduce(function(s,c){return s+c.count;},0);
+  var max = canais.length>0 ? canais[0].count : 1;
+  var html = canais.length===0
+    ? '<span style="font-size:12px;color:var(--text3)">Sem dados de canal.</span>'
+    : canais.map(function(c){
+        var pct = total>0 ? Math.round(c.count/total*100) : 0;
+        var w = Math.round(c.count/max*100);
+        return '<div class="emp-row">'+
+          '<span class="emp-name" style="width:140px">'+c.canal+'</span>'+
+          '<div class="emp-bar-wrap"><div class="emp-bar" style="width:'+w+'%"></div></div>'+
+          '<span class="emp-count">'+c.count+'</span>'+
+          '<span class="emp-pct">'+pct+'%</span></div>';
+      }).join('');
+  document.getElementById('canais-list').innerHTML = html;
+}
+
+// ── Limpeza por Empreendimento — item 9 ──────────────────────
+function renderLimpezaEmp() {
+  var d = getD();
+  var emps = d.empreendimentos.filter(function(e){return e.limpeza>0;}).sort(function(a,b){return b.limpeza-a.limpeza;});
+  var total = emps.reduce(function(s,e){return s+e.limpeza;},0);
+  var max = emps.length>0 ? emps[0].limpeza : 1;
+  var html = emps.length===0
+    ? '<span style="font-size:12px;color:var(--text3)">Nenhuma ocorrência de limpeza no período.</span>'
+    : emps.map(function(e){
+        var pct = total>0 ? Math.round(e.limpeza/total*100) : 0;
+        var w = Math.round(e.limpeza/max*100);
+        return '<div class="emp-row">'+
+          '<span class="emp-name">'+e.nome+'</span>'+
+          '<span class="emp-cluster">'+e.cluster+'</span>'+
+          '<div class="emp-bar-wrap"><div style="height:100%;width:'+w+'%;background:#E91E63;border-radius:4px"></div></div>'+
+          '<span class="emp-count">'+e.limpeza+'</span>'+
+          '<span class="emp-pct">'+pct+'%</span></div>';
+      }).join('');
+  document.getElementById('limp-emp-list').innerHTML = html;
+
+  if(chartLimpEmp) chartLimpEmp.destroy();
+  if(emps.length===0){document.getElementById('chart-limp-emp').style.display='none';return;}
+  document.getElementById('chart-limp-emp').style.display='block';
+  chartLimpEmp = new Chart(document.getElementById('chart-limp-emp'),{
     type:'bar',
-    data:{labels:['Alta','Média','Baixa'],
-      datasets:[{data:[d.prioridades.Alta,d.prioridades.Media,d.prioridades.Baixa],
-        backgroundColor:['#EF4444','#F59E0B','#22C55E'],borderRadius:5}]},
+    data:{labels:emps.map(function(e){return e.nome;}),datasets:[{data:emps.map(function(e){return e.limpeza;}),backgroundColor:'#E91E63',borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+}
+
+// ── Manutenção por Empreendimento — item 9 ───────────────────
+function renderManutencaoEmp() {
+  var d = getD();
+  var emps = d.empreendimentos.filter(function(e){return e.manutencao>0;}).sort(function(a,b){return b.manutencao-a.manutencao;});
+  var total = emps.reduce(function(s,e){return s+e.manutencao;},0);
+  var max = emps.length>0 ? emps[0].manutencao : 1;
+  var html = emps.length===0
+    ? '<span style="font-size:12px;color:var(--text3)">Nenhuma ocorrência de manutenção no período.</span>'
+    : emps.map(function(e){
+        var pct = total>0 ? Math.round(e.manutencao/total*100) : 0;
+        var w = Math.round(e.manutencao/max*100);
+        return '<div class="emp-row">'+
+          '<span class="emp-name">'+e.nome+'</span>'+
+          '<span class="emp-cluster">'+e.cluster+'</span>'+
+          '<div class="emp-bar-wrap"><div style="height:100%;width:'+w+'%;background:#795548;border-radius:4px"></div></div>'+
+          '<span class="emp-count">'+e.manutencao+'</span>'+
+          '<span class="emp-pct">'+pct+'%</span></div>';
+      }).join('');
+  document.getElementById('manut-emp-list').innerHTML = html;
+
+  if(chartManutEmp) chartManutEmp.destroy();
+  if(emps.length===0){document.getElementById('chart-manut-emp').style.display='none';return;}
+  document.getElementById('chart-manut-emp').style.display='block';
+  chartManutEmp = new Chart(document.getElementById('chart-manut-emp'),{
+    type:'bar',
+    data:{labels:emps.map(function(e){return e.nome;}),datasets:[{data:emps.map(function(e){return e.manutencao;}),backgroundColor:'#795548',borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+}
+
+// ── Tendência Semanal ────────────────────────────────────────
+function renderSemanal() {
+  // Sempre usa semanas globais — é uma visão macro do período completo
+  var sems = D.semanas || [];
+  if(!sems || sems.length===0) return;
+  if(chartSemanal) chartSemanal.destroy();
+  chartSemanal = new Chart(document.getElementById('chart-semanal'),{
+    type:'line',
+    data:{labels:sems.map(function(s){return 'Sem '+s.d;}),datasets:[{data:sems.map(function(s){return s.c;}),
+      borderColor:'#FF6A13',backgroundColor:'rgba(255,106,19,.08)',borderWidth:2,
+      pointRadius:4,pointBackgroundColor:'#FF6A13',fill:true,tension:0.35}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:11}}},
-              y:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}}}}
+      scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}}}}
   });
 }
 
-function renderAgentes(){
-  var d=getD();
-  var html='';
+// ── Insights Estratégicos — item 1 ──────────────────────────
+function renderStrategicInsights() {
+  var d = getD();
+  var container = document.getElementById('strategic-insights');
+  var insights = [];
+
+  // 1. Top tema
+  var sorted = d.classifs.slice().sort(function(a,b){return b.count-a.count;}).filter(function(c){return c.count>0;});
+  if(sorted.length>0) {
+    var top = sorted[0];
+    var fn = INSIGHTS_CLASSIF[top.id];
+    var top1 = top.top_tags.length>0 ? top.top_tags[0].label.toLowerCase() : '';
+    if(fn) insights.push({title:'Tema principal do período', body: fn(top.pct, top1), type:'default'});
+  }
+
+  // 2. TPR vs Meta
+  if(d.tpr_med!=null) {
+    if(d.tpr_med > META_TPR) {
+      insights.push({title:'Alerta: Tempo de Resposta', body:'O TPR médio do período é <strong>'+fmt(d.tpr_med)+' min</strong>, acima da meta de <strong>'+META_TPR+' min</strong>. Analise quais analistas e horários concentram os maiores tempos de resposta para priorizar ação.', type:'red'});
+    } else {
+      insights.push({title:'Meta de Resposta Atingida', body:'O TPR médio (<strong>'+fmt(d.tpr_med)+' min</strong>) está dentro da meta de <strong>'+META_TPR+' min</strong>. Mantenha o monitoramento contínuo para garantir consistência.', type:'green'});
+    }
+  }
+
+  // 3. Empreendimento com maior taxa de contato
+  var topEmp = d.empreendimentos.filter(function(e){return e.taxa_contato!=null;}).sort(function(a,b){return b.taxa_contato-a.taxa_contato;})[0];
+  if(topEmp) {
+    insights.push({title:'Empreendimento em destaque', body:'<strong>'+topEmp.nome+'</strong> apresenta a maior taxa de contato: <strong>'+topEmp.taxa_contato+'%</strong> dos hóspedes acionam o CX. Investigue os principais motivos e avalie ações preventivas junto à operação local.', type:'default'});
+  }
+
+  // 4. Prioridade Alta
+  var tot = d.prioridades.Alta + d.prioridades.Media + d.prioridades.Baixa;
+  if(tot>0) {
+    var pctAlta = Math.round(d.prioridades.Alta/tot*100);
+    if(pctAlta>30) {
+      insights.push({title:'Volume de Prioridade Alta', body:'<strong>'+pctAlta+'%</strong> dos atendimentos classificados têm <strong>Prioridade Alta</strong>. Analise as tags mais frequentes nesta faixa para identificar causas raiz e oportunidades de atuação preventiva.', type:'red'});
+    }
+  }
+
+  // 5. Limpeza / Manutenção
+  var limpTotal = d.empreendimentos.reduce(function(s,e){return s+e.limpeza;},0);
+  var manutTotal = d.empreendimentos.reduce(function(s,e){return s+e.manutencao;},0);
+  if(limpTotal>0 || manutTotal>0) {
+    insights.push({title:'Operações: Limpeza e Manutenção', body:'O período registrou <strong>'+limpTotal+' ocorrências de limpeza</strong> e <strong>'+manutTotal+' de manutenção</strong>. Acesse as seções específicas para identificar os empreendimentos com maior incidência e planejar ações corretivas.', type:'default'});
+  }
+
+  // 6. Volume trend
+  var vi = (activeMonth==='total') ? D.volume_insights : (D.por_mes[activeMonth]||{}).volume_insights;
+  if(vi && vi.trend_dir==='crescimento') {
+    insights.push({title:'Tendência de Crescimento', body:'O volume de atendimentos apresenta tendência de <strong>crescimento</strong> nas últimas semanas. Avalie a necessidade de reforço na equipe e verifique se há algum evento operacional ou sazonalidade explicando o aumento.', type:'red'});
+  }
+
+  var colors = {default:'', red:'red', green:'green', blue:'blue'};
+  container.innerHTML = insights.map(function(i){
+    return '<div class="card g-insight">'+
+      '<div class="g-insight-title">'+i.title+'</div>'+
+      '<div class="g-insight-body">'+i.body+'</div>'+
+      '</div>';
+  }).join('') || '<div class="card"><span style="color:var(--text3)">Sem dados suficientes para gerar insights.</span></div>';
+}
+
+// ── OCC / Capacidade Operacional — item 14 ───────────────────
+function renderOCC() {
+  var d = getD();
+  var occ = D.occ || [];
+  if(occ.length===0) {
+    document.getElementById('occ-tbody').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text3)">Dados de OCC não disponíveis. Verifique a aba "Reservas e OCC" na planilha.</td></tr>';
+    return;
+  }
+  // Cruzar OCC com tickets do período atual
+  var empMap = {};
+  d.empreendimentos.forEach(function(e){empMap[e.nome]=e;});
+
+  var html = occ.map(function(o){
+    var e = empMap[o.nome] || {};
+    var tickets = e.count || 0;
+    var taxa = o.reservas>0 ? Math.round(tickets/o.reservas*100) : null;
+    var taxaHtml = taxa!=null ? ('<span class="taxa-pill '+(taxa>=60?'taxa-r':taxa>=40?'taxa-a':'taxa-g')+'">'+taxa+'%</span>') : '—';
+    var occHtml = o.occ_pct!=null ? o.occ_pct+'%' : '—';
+    return '<tr><td>'+o.nome+'</td><td>'+o.reservas.toLocaleString('pt-BR')+'</td><td>'+occHtml+'</td><td>'+tickets.toLocaleString('pt-BR')+'</td><td>'+taxaHtml+'</td></tr>';
+  }).join('');
+  document.getElementById('occ-tbody').innerHTML = html;
+
+  // Insight sobre correlação
+  var withTaxa = occ.filter(function(o){return empMap[o.nome]&&o.reservas>0;});
+  if(withTaxa.length>0) {
+    var top = withTaxa.map(function(o){var e=empMap[o.nome]||{};return {nome:o.nome,taxa:Math.round((e.count||0)/o.reservas*100)};}).sort(function(a,b){return b.taxa-a.taxa;})[0];
+    document.getElementById('occ-insight').innerHTML = '<div class="insight-box blue">A <strong>Taxa de Contato</strong> mede quantos hóspedes por 100 reservas acionaram o CX. <strong>'+top.nome+'</strong> lidera com <strong>'+top.taxa+'%</strong> — um em cada '+(top.taxa>0?Math.round(100/top.taxa):'-')+' hóspedes entra em contato.</div>';
+  }
+}
+
+// ── Tags Pendentes — item 10 ──────────────────────────────────
+function renderTagsPendentes() {
+  var tp = D.tags_pendentes || [];
+  var list = document.getElementById('tags-pendentes-list');
+  var empty = document.getElementById('tags-pendentes-empty');
+  if(tp.length===0){
+    list.style.display='none';
+    empty.style.display='block';
+    return;
+  }
+  list.style.display='flex';
+  empty.style.display='none';
+  list.innerHTML = tp.map(function(t){
+    return '<span class="tag-pend-item">'+t.label+' <span class="tag-pend-count">'+t.count+'</span></span>';
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════
+//  ANALISTAS
+// ════════════════════════════════════════════════════════════
+
+// ── Classificação de Aderência — item 6 ─────────────────────
+function classifAderencia(pct) {
+  if(pct==null) return {label:'N/D',cls:'pill-n'};
+  if(pct>=30) return {label:'Excelente',cls:'pill ad-excelente'};
+  if(pct>=27) return {label:'Bom',cls:'pill ad-bom'};
+  if(pct>=21) return {label:'Médio',cls:'pill ad-medio'};
+  if(pct>=15) return {label:'Ruim',cls:'pill ad-ruim'};
+  return {label:'Alerta Máximo',cls:'pill ad-alerta'};
+}
+
+function pillTpr(val) {
+  if(val==null) return '<span class="pill pill-n">—</span>';
+  var cls = val<=META_TPR?'pill-g':val<=META_TPR*2?'pill-a':'pill-r';
+  return '<span class="pill '+cls+'">'+fmt(val)+'</span>';
+}
+function pillTtf(val) {
+  if(val==null) return '<span class="pill pill-n">—</span>';
+  var cls = val<=META_TTF?'pill-g':val<=META_TTF*1.5?'pill-a':'pill-r';
+  return '<span class="pill '+cls+'">'+fmt(val)+'</span>';
+}
+
+// ── Metas Summary ─────────────────────────────────────────────
+function renderMetasSummary() {
+  var d = getD();
+  var tprEl = document.getElementById('meta-tpr-val');
+  var ttfEl = document.getElementById('meta-ttf-val');
+  if(tprEl) {
+    var tprCls = d.tpr_med==null?'pill-n':d.tpr_med<=META_TPR?'pill-g':d.tpr_med<=META_TPR*2?'pill-a':'pill-r';
+    tprEl.innerHTML = '<span class="pill '+tprCls+'">'+(d.tpr_med!=null?fmt(d.tpr_med)+' min':'—')+'</span>';
+  }
+  if(ttfEl) {
+    var ttfCls = d.ttf_med==null?'pill-n':d.ttf_med<=META_TTF?'pill-g':d.ttf_med<=META_TTF*1.5?'pill-a':'pill-r';
+    ttfEl.innerHTML = '<span class="pill '+ttfCls+'">'+(d.ttf_med!=null?fmt(d.ttf_med)+' min':'—')+'</span>';
+  }
+}
+
+// ── Performance Analistas — itens 6, 7 ──────────────────────
+function renderAgentes() {
+  var d = getD();
+  var html = '';
+  var total = d.total || 1;
   d.agentes.forEach(function(a){
-    var tpr=a.tpr_med;
-    var cls=tpr==null?'':tpr<=5?'pill-g':tpr<=15?'pill-a':'pill-r';
-    html+='<tr><td>'+a.nome+'</td><td>'+a.tickets+'</td>'+
-      '<td><span class="pill '+cls+'">'+fmt(tpr)+'</span></td>'+
-      '<td>'+fmt(a.ttf_med)+'</td><td>'+fmt(a.msgs_med)+'</td></tr>';
+    var ader = a.aderencia != null ? (a.aderencia*100).toFixed(1) : null;
+    var aderClass = classifAderencia(ader ? parseFloat(ader) : null);
+    var npsVal = a.nps!=null ? a.nps.toFixed(0)+'%' : 'N/D';
+    var npsCls = a.nps==null?'pill-n':a.nps>=META_NPS?'pill-g':a.nps>=80?'pill-a':'pill-r';
+    var aderVal = ader!=null ? ader+'%' : 'N/D';
+    html += '<tr>'+
+      '<td>'+a.nome+'</td>'+
+      '<td>'+a.tickets+'</td>'+
+      '<td>'+a.pct+'%</td>'+
+      '<td>'+pillTpr(a.tpr_med)+'</td>'+
+      '<td>'+pillTtf(a.ttf_med)+'</td>'+
+      '<td>'+fmt(a.msgs_med)+'</td>'+
+      '<td><span class="pill '+npsCls+'">'+npsVal+'</span></td>'+
+      '<td>'+aderVal+'</td>'+
+      '<td><span class="pill '+aderClass.cls+'">'+aderClass.label+'</span></td>'+
+      '</tr>';
   });
-  document.getElementById('agentes-tbody').innerHTML=html;
+  document.getElementById('agentes-tbody').innerHTML = html || '<tr><td colspan="9" style="text-align:center;color:var(--text3)">Sem dados de analistas no período.</td></tr>';
 }
 
-// Init
+// ── Insights Gerenciais — item 8 ─────────────────────────────
+function renderGerencialInsights() {
+  var d = getD();
+  var ag = d.agentes.filter(function(a){return a.tickets>0;});
+  if(ag.length===0) { document.getElementById('gerencial-insights').innerHTML=''; return; }
+
+  var insights = [];
+
+  // Score composto: prioridade = TPR baixo + TTF baixo + volume alto
+  function score(a) {
+    var tpr = a.tpr_med!=null ? Math.max(0, META_TPR - a.tpr_med) : 0;
+    var ttf = a.ttf_med!=null ? Math.max(0, META_TTF - a.ttf_med) : 0;
+    var vol = a.pct || 0;
+    return tpr*0.4 + ttf*0.3 + vol*0.3;
+  }
+  var scored = ag.slice().sort(function(a,b){return score(b)-score(a);});
+
+  // Top 3 melhores
+  var top3 = scored.slice(0,3);
+  if(top3.length>0) {
+    var top3txt = top3.map(function(a,i){
+      return '<strong>'+(i+1)+'º '+a.nome+'</strong> (TPR '+fmt(a.tpr_med)+' min, TTF '+fmt(a.ttf_med)+' min, '+a.tickets+' tickets)';
+    }).join('; ');
+    insights.push({title:'Top 3 Analistas do Período', body:top3txt+'. Estes analistas combinam velocidade de resposta, eficiência de encerramento e volume de atendimento.'});
+  }
+
+  // Destaque
+  if(scored[0]) {
+    var dest = scored[0];
+    insights.push({title:'Destaque do Período', body:'<strong>'+dest.nome+'</strong> se destacou com <strong>'+dest.tickets+' atendimentos</strong>, TPR médio de <strong>'+fmt(dest.tpr_med)+' min</strong> e TTF médio de <strong>'+fmt(dest.ttf_med)+' min</strong>.'});
+  }
+
+  // Maior consistência: menor desvio em relação à própria média (aproximado pelo score mais equilibrado)
+  var bestConsist = ag.slice().sort(function(a,b){
+    var va = Math.abs((a.tpr_med||0)-META_TPR) + Math.abs((a.ttf_med||0)-META_TTF);
+    var vb = Math.abs((b.tpr_med||0)-META_TPR) + Math.abs((b.ttf_med||0)-META_TTF);
+    return va-vb;
+  })[0];
+  if(bestConsist) {
+    insights.push({title:'Maior Consistência', body:'<strong>'+bestConsist.nome+'</strong> apresenta os indicadores mais próximos das metas (TPR '+fmt(bestConsist.tpr_med)+' min · TTF '+fmt(bestConsist.ttf_med)+' min), demonstrando consistência operacional ao longo do período.'});
+  }
+
+  // Atenção: maior TPR ou TTF
+  var worsts = ag.slice().sort(function(a,b){
+    return ((b.tpr_med||0)+(b.ttf_med||0)) - ((a.tpr_med||0)+(a.ttf_med||0));
+  });
+  var worst = worsts[0];
+  if(worst && (worst.tpr_med>META_TPR || worst.ttf_med>META_TTF)) {
+    insights.push({title:'Indicadores Comprometidos', body:'<strong>'+worst.nome+'</strong> apresenta os maiores tempos: TPR <strong>'+fmt(worst.tpr_med)+' min</strong> (meta: '+META_TPR+') e TTF <strong>'+fmt(worst.ttf_med)+' min</strong> (meta: '+META_TTF+'). Recomenda-se uma conversa de desenvolvimento focada em eficiência de encerramento.'});
+  }
+
+  // Oportunidades de desenvolvimento
+  var acima = ag.filter(function(a){return (a.tpr_med||0)>META_TPR || (a.ttf_med||0)>META_TTF;});
+  if(acima.length>1) {
+    var nomes = acima.map(function(a){return a.nome.split(' ')[0];}).join(', ');
+    insights.push({title:'Oportunidades de Desenvolvimento', body:'<strong>'+acima.length+' analistas</strong> ('+nomes+') apresentam pelo menos um indicador acima da meta. Considere sessões individuais de feedback com foco em gestão de tempo de resposta e técnicas de encerramento eficiente.'});
+  }
+
+  // Distribuição de carga
+  var maxTick = Math.max.apply(null, ag.map(function(a){return a.tickets;}));
+  var minTick = Math.min.apply(null, ag.map(function(a){return a.tickets;}));
+  if(maxTick > minTick*3 && ag.length>2) {
+    var overloaded = ag.filter(function(a){return a.tickets===maxTick;})[0];
+    insights.push({title:'Distribuição de Carga', body:'Há uma diferença significativa na distribuição de atendimentos: <strong>'+overloaded.nome+'</strong> concentra <strong>'+overloaded.tickets+' tickets</strong> ('+overloaded.pct+'% do total). Avalie se a distribuição está equilibrada e se há impacto nos indicadores.'});
+  }
+
+  document.getElementById('gerencial-insights').innerHTML = insights.map(function(i){
+    return '<div class="g-insight">'+
+      '<div class="g-insight-title">'+i.title+'</div>'+
+      '<div class="g-insight-body">'+i.body+'</div>'+
+      '</div>';
+  }).join('');
+}
+
+// ── Init ────────────────────────────────────────────────────
 buildPeriodTabs();
 renderAll();
 </script>
