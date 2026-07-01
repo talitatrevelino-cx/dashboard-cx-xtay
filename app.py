@@ -13,11 +13,11 @@ from processar_dados import processar
 
 st.set_page_config(
     page_title="Dashboard CX · Xtay",
-    page_icon="📨",
+    page_icon="🟠",
     layout="wide",
 )
 
-# Remove padding padrão do Streamlit para o dashboard ocupar a tela toda
+# Remove padding padrão do Streamlit
 st.markdown("""
 <style>
     .block-container { padding: 0 !important; }
@@ -27,9 +27,22 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Força favicon via JS (st.markdown bloqueia scripts; components.html executa)
+components.html("""
+<script>
+(function() {
+    var link = window.parent.document.querySelector("link[rel*='icon']") || window.parent.document.createElement('link');
+    link.type = 'image/svg+xml';
+    link.rel = 'icon';
+    link.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23FF6A13'/><text x='50' y='68' text-anchor='middle' font-family='Arial,sans-serif' font-weight='900' font-size='44' fill='white'>CX</text></svg>";
+    window.parent.document.head.appendChild(link);
+})();
+</script>
+""", height=0)
+
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
-@st.cache_data(ttl=300, show_spinner="Carregando dados do Google Sheets…+")
+@st.cache_data(ttl=300, show_spinner="Carregando dados do Google Sheets…")
 def load_data():
     creds_info = dict(st.secrets["gcp_service_account"])
     creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
@@ -70,7 +83,7 @@ try:
     rows_droz, rows_occ = load_data()
     payload = processar(rows_droz, rows_occ)
     html = TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False))
-    components.html(html, height=3600, scrolling=True)
+    components.html(html, height=6000, scrolling=True)
 except Exception as e:
     st.error(f"Erro ao carregar dados: {e}")
     st.info("Verifique se os secrets estão configurados corretamente no Streamlit Cloud.")
