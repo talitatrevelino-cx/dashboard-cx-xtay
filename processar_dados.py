@@ -41,6 +41,10 @@ EMPREEND_KEYWORDS = [
     ("bk30 largo do arouche","BK30 Largo do Arouche"),("bk30 santana","BK30 Santana"),
     ("restinga","Restinga"),
     ("ipiranga","Ipiranga"),("ip alto","Ipiranga"),
+    # ── Inativos — reconhecidos para filtro, não listados nos ativos ──
+    ("gru","Guarulhos Aeroporto"),
+    ("oscar freire","Oscar Freire"),("oscar_freire","Oscar Freire"),
+    ("berrini","Berrini"),
     ("upper","Upper West"),("simple","Simple Smart"),
     ("cais","Cais"),("atrium","Atrium"),("fuji","Fuji"),
     ("soho","Soho"),("oslo","Oslo"),("puc","PUC"),
@@ -165,8 +169,19 @@ CLASSIF_EXACT = {
     "mkt_hospede_frequent": "marketing",
     "hospede_mkt":          "marketing",
     "trabalhe_conosco":     "marketing",
+    # ── Tech (adicionais) ────────────────────────────────────
+    "erro_de_verificacao_checkin_manual": "tech",
+    "erro_senha_null":                    "tech",
+    # ── Manutenção (adicionais) ──────────────────────────────
+    "eletrica":               "manutencao",
+    "mobiliario":             "manutencao",
+    "equipamentos":           "manutencao",
+    "aviso_falta_de_agua":    ["manutencao","operacional"],
     # ── Contato Ativo ────────────────────────────────────────
-    "contato_ativo":        "contato_ativo",
+    "contato_ativo":                        "contato_ativo",
+    "contato_ativo_comunicacoes":           "contato_ativo",
+    "contato_ativo_cobranca":               "contato_ativo",
+    "contato_ativo_autorizacao_entrada":    "contato_ativo",
     # ── Improdutivos ─────────────────────────────────────────
     "falta_de_interacao":   "improdutivos",
     "sem_retorno":          "improdutivos",
@@ -183,6 +198,7 @@ CLASSIF_PREFIXOS = [
     ("solicitacao_de_late_check_out_",  "recepcao_digital"),
     ("abertura_remota_",                "recepcao_digital"),
     ("solicitacao_de_servico_",         "servicos"),
+    ("contato_ativo_",                  "contato_ativo"),   # cobre variações futuras
 ]
 
 CLASSIF_META = {
@@ -286,6 +302,15 @@ LABELS = {
     "solicitacao_de_late_check_out_sem_disponibilidade":"Late check-out (sem disponibilidade)",
     "duvidas_omnibees":"Dúvidas Omnibees","alteracao_de_dados_cadastrais":"Alteração de dados cadastrais",
     "comercial_hospedar":"Comercial — hospedar","comercial_morar":"Comercial — morar",
+    "erro_de_verificacao_checkin_manual":"Check-in manual — erro de verificação",
+    "erro_senha_null":"Erro senha null",
+    "eletrica":"Elétrica",
+    "mobiliario":"Mobiliário",
+    "equipamentos":"Equipamentos",
+    "aviso_falta_de_agua":"Falta de água",
+    "contato_ativo_comunicacoes":"Contato ativo — comunicações",
+    "contato_ativo_cobranca":"Contato ativo — cobrança",
+    "contato_ativo_autorizacao_entrada":"Contato ativo — autorização de entrada",
 }
 
 # ── Funções auxiliares ───────────────────────────────────────
