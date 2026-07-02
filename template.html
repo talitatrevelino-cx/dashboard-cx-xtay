@@ -863,23 +863,46 @@ function renderCanais() {
   document.getElementById('canais-list').innerHTML = html;
 }
 
+// ── Helper: lista de tags expansível por empreendimento ──────
+function empTagDetail(id, tags, cor) {
+  if(!tags || tags.length===0) return '';
+  var max = tags[0].count;
+  var items = tags.map(function(t){
+    var w = Math.round(t.count/max*100);
+    return '<div class="tag-item">'+
+      '<span class="tag-item-label">'+t.label+'</span>'+
+      '<div class="tag-item-bar"><div class="tag-item-fill" style="width:'+w+'%;background:'+cor+'"></div></div>'+
+      '<span class="tag-item-count">'+t.count+'</span></div>';
+  }).join('');
+  return '<div class="tag-detail" id="empdet-'+id+'">'+items+'</div>';
+}
+function toggleEmpDet(id) {
+  var el = document.getElementById('empdet-'+id);
+  if(el) el.classList.toggle('open');
+}
+
 // ── Limpeza por Empreendimento — item 9 ──────────────────────
 function renderLimpezaEmp() {
   var d = getD();
   var emps = d.empreendimentos.filter(function(e){return e.limpeza>0;}).sort(function(a,b){return b.limpeza-a.limpeza;});
   var total = emps.reduce(function(s,e){return s+e.limpeza;},0);
   var max = emps.length>0 ? emps[0].limpeza : 1;
+  var cor = '#E91E63';
   var html = emps.length===0
     ? '<span style="font-size:12px;color:var(--text3)">Nenhuma ocorrência de limpeza no período.</span>'
     : emps.map(function(e){
         var pct = total>0 ? Math.round(e.limpeza/total*100) : 0;
         var w = Math.round(e.limpeza/max*100);
-        return '<div class="emp-row">'+
-          '<span class="emp-name">'+e.nome+'</span>'+
+        var uid = 'limp-'+e.nome.replace(/\s/g,'_');
+        var hasTags = e.limp_tags && e.limp_tags.length>0;
+        var chevron = hasTags ? ' <span style="font-size:10px;color:var(--text3)">▸ detalhes</span>' : '';
+        return '<div class="emp-row" style="'+(hasTags?'cursor:pointer;':'')+'" '+(hasTags?'onclick="toggleEmpDet(\''+uid+'\')"':'')+'>'+
+          '<span class="emp-name">'+e.nome+chevron+'</span>'+
           '<span class="emp-cluster">'+e.cluster+'</span>'+
-          '<div class="emp-bar-wrap"><div style="height:100%;width:'+w+'%;background:#E91E63;border-radius:4px"></div></div>'+
+          '<div class="emp-bar-wrap"><div style="height:100%;width:'+w+'%;background:'+cor+';border-radius:4px"></div></div>'+
           '<span class="emp-count">'+e.limpeza+'</span>'+
-          '<span class="emp-pct">'+pct+'%</span></div>';
+          '<span class="emp-pct">'+pct+'%</span></div>'+
+          empTagDetail(uid, e.limp_tags, cor);
       }).join('');
   document.getElementById('limp-emp-list').innerHTML = html;
 
@@ -888,7 +911,7 @@ function renderLimpezaEmp() {
   document.getElementById('chart-limp-emp').style.display='block';
   chartLimpEmp = new Chart(document.getElementById('chart-limp-emp'),{
     type:'bar',
-    data:{labels:emps.map(function(e){return e.nome;}),datasets:[{data:emps.map(function(e){return e.limpeza;}),backgroundColor:'#E91E63',borderRadius:4}]},
+    data:{labels:emps.map(function(e){return e.nome;}),datasets:[{data:emps.map(function(e){return e.limpeza;}),backgroundColor:cor,borderRadius:4}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
       scales:{x:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
   });
@@ -900,17 +923,22 @@ function renderManutencaoEmp() {
   var emps = d.empreendimentos.filter(function(e){return e.manutencao>0;}).sort(function(a,b){return b.manutencao-a.manutencao;});
   var total = emps.reduce(function(s,e){return s+e.manutencao;},0);
   var max = emps.length>0 ? emps[0].manutencao : 1;
+  var cor = '#795548';
   var html = emps.length===0
     ? '<span style="font-size:12px;color:var(--text3)">Nenhuma ocorrência de manutenção no período.</span>'
     : emps.map(function(e){
         var pct = total>0 ? Math.round(e.manutencao/total*100) : 0;
         var w = Math.round(e.manutencao/max*100);
-        return '<div class="emp-row">'+
-          '<span class="emp-name">'+e.nome+'</span>'+
+        var uid = 'manut-'+e.nome.replace(/\s/g,'_');
+        var hasTags = e.manut_tags && e.manut_tags.length>0;
+        var chevron = hasTags ? ' <span style="font-size:10px;color:var(--text3)">▸ detalhes</span>' : '';
+        return '<div class="emp-row" style="'+(hasTags?'cursor:pointer;':'')+'" '+(hasTags?'onclick="toggleEmpDet(\''+uid+'\')"':'')+'>'+
+          '<span class="emp-name">'+e.nome+chevron+'</span>'+
           '<span class="emp-cluster">'+e.cluster+'</span>'+
-          '<div class="emp-bar-wrap"><div style="height:100%;width:'+w+'%;background:#795548;border-radius:4px"></div></div>'+
+          '<div class="emp-bar-wrap"><div style="height:100%;width:'+w+'%;background:'+cor+';border-radius:4px"></div></div>'+
           '<span class="emp-count">'+e.manutencao+'</span>'+
-          '<span class="emp-pct">'+pct+'%</span></div>';
+          '<span class="emp-pct">'+pct+'%</span></div>'+
+          empTagDetail(uid, e.manut_tags, cor);
       }).join('');
   document.getElementById('manut-emp-list').innerHTML = html;
 
@@ -919,7 +947,7 @@ function renderManutencaoEmp() {
   document.getElementById('chart-manut-emp').style.display='block';
   chartManutEmp = new Chart(document.getElementById('chart-manut-emp'),{
     type:'bar',
-    data:{labels:emps.map(function(e){return e.nome;}),datasets:[{data:emps.map(function(e){return e.manutencao;}),backgroundColor:'#795548',borderRadius:4}]},
+    data:{labels:emps.map(function(e){return e.nome;}),datasets:[{data:emps.map(function(e){return e.manutencao;}),backgroundColor:cor,borderRadius:4}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
       scales:{x:{grid:{color:'#F0F0F0'},ticks:{font:{size:11}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
   });
