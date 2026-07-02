@@ -414,6 +414,8 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
     canal_c = Counter()
     # Cruzamentos — item 9
     manut_emp = Counter(); limp_emp = Counter()
+    manut_emp_tags = defaultdict(Counter)   # {emp: {tag_label: count}}
+    limp_emp_tags  = defaultdict(Counter)   # {emp: {tag_label: count}}
     # Tags em atendimentos de prioridade — item 3
     pri_tag_c = {"Alta": Counter(), "Média": Counter(), "Baixa": Counter()}
 
@@ -465,11 +467,21 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
 
         # Cruzamentos Manutenção / Limpeza x Empreendimento — item 9
         if "manutencao" in tclassifs:
-            for e in emps: manut_emp[e]+=1
-            if not emps: manut_emp["Sem empreendimento"]+=1
+            manut_tags_ticket = [lbl(t) for t in mot if "manutencao" in classify(t)]
+            for e in emps:
+                manut_emp[e] += 1
+                for tl in manut_tags_ticket:
+                    manut_emp_tags[e][tl] += 1
+            if not emps:
+                manut_emp["Sem empreendimento"] += 1
         if "limpeza" in tclassifs:
-            for e in emps: limp_emp[e]+=1
-            if not emps: limp_emp["Sem empreendimento"]+=1
+            limp_tags_ticket = [lbl(t) for t in mot if "limpeza" in classify(t)]
+            for e in emps:
+                limp_emp[e] += 1
+                for tl in limp_tags_ticket:
+                    limp_emp_tags[e][tl] += 1
+            if not emps:
+                limp_emp["Sem empreendimento"] += 1
 
     total = len(tids)
 
@@ -497,12 +509,15 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
         top8 = [{"label":k,"count":v} for k,v in emp_m[nome].most_common(8)]
         manut_cnt = manut_emp.get(nome, 0)
         limp_cnt  = limp_emp.get(nome, 0)
+        manut_tags_emp = [{"label": k, "count": v} for k, v in manut_emp_tags[nome].most_common()]
+        limp_tags_emp  = [{"label": k, "count": v} for k, v in limp_emp_tags[nome].most_common()]
         emps_lista.append({
             "nome": nome, "cluster": CLUSTERS.get(nome,"Outros"),
             "count": tickets, "pct": pct_emp, "top_motivos": top8,
             "reservas": reservas, "occ_pct": occ_pct, "un_total": un_total,
             "taxa_contato": taxa,
-            "manutencao": manut_cnt, "limpeza": limp_cnt,
+            "manutencao": manut_cnt, "manut_tags": manut_tags_emp,
+            "limpeza":    limp_cnt,  "limp_tags":  limp_tags_emp,
         })
     emps_lista.sort(key=lambda x: -x["count"])
 
@@ -711,6 +726,7 @@ def processar(rows_droz, rows_occ=None):
         {"nome":nome, **vals}
         for nome, vals in occ_agg.items()
     ]
+
 
     return {
         "gerado_em": datetime.now(TZ_BR).strftime("%d/%m/%Y %H:%M"),  # item 12
