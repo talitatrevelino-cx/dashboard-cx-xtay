@@ -19,8 +19,15 @@ TAGS_STATUS_CLIENTE = {
     "nao_possui_checkin_hoje_nem_futuros","existe_checkin_futuro",
 }
 MAPA_PRIORIDADE = {"prioridade_alta":"Alta","prioridade_media":"Média","prioridade_baixa":"Baixa"}
+# "Atendimento médio" é sinônimo de prioridade média (definição CX, jul/2026) — ainda não observado
+# na base atual; slug abaixo é uma hipótese até a tag aparecer numa exportação real da Droz.
+MAPA_PRIORIDADE["atendimento_medio"] = "Média"
 
 # Empreendimentos ativos (lista oficial — item 4)
+# Saíram da base no Q1/2026 (decisão CX, jul/2026): Xtay Privillege Botafogo, Botafogo,
+# BK30 Largo do Arouche (Arouche) e BK30 Santana (Santana). Não fazem parte da lista de ativos
+# abaixo; permanecem reconhecidos em EMPREEND_KEYWORDS só para não virarem tag pendente/perdida
+# ao processar dados históricos, mas são sempre excluídos das análises correntes.
 EMPREEND_ATIVOS = {
     "Linked Batel","PUC","Cais","Atrium","Upper West",
     "Vila Madalena","Fuji","Oslo","Campos Sales","Simple Smart","Soho","Ipiranga"
@@ -45,6 +52,12 @@ EMPREEND_KEYWORDS = [
     ("gru","Guarulhos Aeroporto"),
     ("oscar freire","Oscar Freire"),("oscar_freire","Oscar Freire"),
     ("berrini","Berrini"),
+    # Saída Q1/2026 — ver nota junto de EMPREEND_ATIVOS
+    ("xtay privillege botafogo","Xtay Privillege Botafogo"),
+    ("privillege_botafogo","Xtay Privillege Botafogo"),
+    ("botafogo","Botafogo"),
+    ("arouche","Arouche"),
+    ("santana","Santana"),
     ("upper","Upper West"),("simple","Simple Smart"),
     ("cais","Cais"),("atrium","Atrium"),("fuji","Fuji"),
     ("soho","Soho"),("oslo","Oslo"),("puc","PUC"),
@@ -177,6 +190,20 @@ CLASSIF_EXACT = {
     "mobiliario":             "manutencao",
     "equipamentos":           "manutencao",
     "aviso_falta_de_agua":    ["manutencao","operacional"],
+    # "Bateria baixa" = subtag de manutenção, problema de fechadura (criada a partir de jun/2026).
+    # Costuma vir junto de "solicitacao_de_servico_manutencao" no mesmo ticket — a contagem por
+    # classificação já é deduplicada por ticket (ver tclassifs em _build_metrics), então não
+    # dobra o volume de manutenção mesmo quando as duas tags aparecem juntas.
+    "bateria_baixa":          "manutencao",
+    # ── Gestão de Reservas (adicionais) ───────────────────────
+    # "Estender reserva" — sinônimo de prorrogação, tag nova a partir de jun/2026.
+    "estender_reserva":       "gestao_reservas",
+    # ── Contato Ativo (adicionais) ────────────────────────────
+    # "Reputação ativo" — contato proativo de reputação, tratar como Contato Ativo.
+    "reputacao_ativo":        "contato_ativo",
+    # ── Serviços Solicitados (adicionais) ─────────────────────
+    # "Serviço adicional limpeza" — equivalente a "solicitacao_de_servico_limpeza".
+    "servico_adicional_limpeza": "servicos",
     # ── Contato Ativo ────────────────────────────────────────
     "contato_ativo":                        "contato_ativo",
     "contato_ativo_comunicacoes":           "contato_ativo",
@@ -311,6 +338,12 @@ LABELS = {
     "contato_ativo_comunicacoes":"Contato ativo — comunicações",
     "contato_ativo_cobranca":"Contato ativo — cobrança",
     "contato_ativo_autorizacao_entrada":"Contato ativo — autorização de entrada",
+    # ── Reclassificações definidas em jul/2026 (tags novas a partir de jun/2026) ──
+    "bateria_baixa":"Bateria baixa (fechadura)",
+    "atendimento_medio":"Atendimento médio",
+    "estender_reserva":"Estender reserva",
+    "reputacao_ativo":"Reputação ativo",
+    "servico_adicional_limpeza":"Serviço adicional — limpeza",
 }
 
 # ── Funções auxiliares ───────────────────────────────────────
