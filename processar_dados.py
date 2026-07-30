@@ -48,6 +48,10 @@ EMPREEND_KEYWORDS = [
     ("gru","Guarulhos Aeroporto"),
     ("oscar freire","Oscar Freire"),("oscar_freire","Oscar Freire"),
     ("berrini","Berrini"),
+    ("xtay privillege botafogo","Xtay Privillege Botafogo"),("xtay_privillege_botafogo","Xtay Privillege Botafogo"),
+    ("botafogo","Botafogo"),
+    ("arouche","Arouche"),
+    ("santana","Santana"),
     ("upper","Upper West"),("simple","Simple Smart"),
     ("cais","Cais"),("atrium","Atrium"),("fuji","Fuji"),
     ("soho","Soho"),("oslo","Oslo"),("puc","PUC"),
@@ -114,6 +118,7 @@ CLASSIF_EXACT = {
     "reembolso":                                        "gestao_reservas",
     "suspeita_de_fraude":                               "gestao_reservas",
     "alteracao_de_dados_cadastrais":                    "gestao_reservas",
+    "estender_reserva":                                 "gestao_reservas",
     # ── Comercial ────────────────────────────────────────────
     "atendimento-comercial":                        "comercial",
     "comercial":                                    "comercial",
@@ -150,6 +155,7 @@ CLASSIF_EXACT = {
     "mini_mercado":                             "servicos",
     "lavanderia_omo":                           "servicos",
     "cafe_da_manha":                            "servicos",
+    "servico_adicional_de_limpeza":             "servicos",
     # ── Manutenção ───────────────────────────────────────────
     "solicitacao_de_servico_manutencao":    ["servicos","manutencao"],
     "ar_condicionado":                      "manutencao",
@@ -176,6 +182,7 @@ CLASSIF_EXACT = {
     "mkt_hospede_frequent": "marketing",
     "hospede_mkt":          "marketing",
     "trabalhe_conosco":     "marketing",
+    "atendimento_medio":    "marketing",
     # ── Tech (adicionais) ────────────────────────────────────
     "erro_de_verificacao_checkin_manual": "tech",
     "erro_senha_null":                    "tech",
@@ -189,6 +196,7 @@ CLASSIF_EXACT = {
     "contato_ativo_comunicacoes":           "contato_ativo",
     "contato_ativo_cobranca":               "contato_ativo",
     "contato_ativo_autorizacao_entrada":    "contato_ativo",
+    "reputacao_ativo":                      "contato_ativo",
     # ── Improdutivos ─────────────────────────────────────────
     "falta_de_interacao":   "improdutivos",
     "sem_retorno":          "improdutivos",
