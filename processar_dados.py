@@ -19,15 +19,11 @@ TAGS_STATUS_CLIENTE = {
     "nao_possui_checkin_hoje_nem_futuros","existe_checkin_futuro",
 }
 MAPA_PRIORIDADE = {"prioridade_alta":"Alta","prioridade_media":"Média","prioridade_baixa":"Baixa"}
-# "Atendimento médio" é sinônimo de prioridade média (definição CX, jul/2026) — ainda não observado
-# na base atual; slug abaixo é uma hipótese até a tag aparecer numa exportação real da Droz.
-MAPA_PRIORIDADE["atendimento_medio"] = "Média"
+
+# Tags automáticas do sistema — sem valor analítico, retiradas da dashboard
+TAGS_AUTOMATICAS_EXCLUIR = {"teste_droz", "ja_hospedei"}
 
 # Empreendimentos ativos (lista oficial — item 4)
-# Saíram da base no Q1/2026 (decisão CX, jul/2026): Xtay Privillege Botafogo, Botafogo,
-# BK30 Largo do Arouche (Arouche) e BK30 Santana (Santana). Não fazem parte da lista de ativos
-# abaixo; permanecem reconhecidos em EMPREEND_KEYWORDS só para não virarem tag pendente/perdida
-# ao processar dados históricos, mas são sempre excluídos das análises correntes.
 EMPREEND_ATIVOS = {
     "Linked Batel","PUC","Cais","Atrium","Upper West",
     "Vila Madalena","Fuji","Oslo","Campos Sales","Simple Smart","Soho","Ipiranga"
@@ -52,12 +48,6 @@ EMPREEND_KEYWORDS = [
     ("gru","Guarulhos Aeroporto"),
     ("oscar freire","Oscar Freire"),("oscar_freire","Oscar Freire"),
     ("berrini","Berrini"),
-    # Saída Q1/2026 — ver nota junto de EMPREEND_ATIVOS
-    ("xtay privillege botafogo","Xtay Privillege Botafogo"),
-    ("privillege_botafogo","Xtay Privillege Botafogo"),
-    ("botafogo","Botafogo"),
-    ("arouche","Arouche"),
-    ("santana","Santana"),
     ("upper","Upper West"),("simple","Simple Smart"),
     ("cais","Cais"),("atrium","Atrium"),("fuji","Fuji"),
     ("soho","Soho"),("oslo","Oslo"),("puc","PUC"),
@@ -102,6 +92,7 @@ CLASSIF_EXACT = {
     "estacionamento_dificuldades_de_acesso":                "recepcao_digital",
     "estacionamento_duvidas":                               "recepcao_digital",
     "estacionamento_reserva":                               "recepcao_digital",
+    "instrucoes_checkin":                                   "recepcao_digital",
     # ── Tech ─────────────────────────────────────────────────
     "check_in_erro_de_verificacao":         "tech",
     "check_in_manual_documento_digital":    "tech",
@@ -166,10 +157,12 @@ CLASSIF_EXACT = {
     "item_danificado_no_apto":              ["manutencao","operacional"],
     "item_faltante_na_unidade":             ["manutencao","operacional"],
     "aviso_de_falta_de_energia":            ["manutencao","operacional"],
+    "problemas_fechadura":                  "manutencao",
     # ── Problemas com Limpeza ────────────────────────────────
     "problemas_com_limpeza":    "limpeza",
     "reclamacao_de_limpeza":    "limpeza",
     "limpeza_nao_realizada":    "limpeza",
+    "problemas_com_enxoval":    "limpeza",
     # ── Gestão Operacional ───────────────────────────────────
     "reclamacao_da_vista":      "operacional",
     "reclamacao_de_barulho":    "operacional",
@@ -178,6 +171,7 @@ CLASSIF_EXACT = {
     "feedback_estadia":         "operacional",
     "achados_e_perdidos":       "operacional",
     "conversa_operacional":     "operacional",
+    "acesso_indevido":          "operacional",
     # ── Marketing e Relacionamento ───────────────────────────
     "mkt_hospede_frequent": "marketing",
     "hospede_mkt":          "marketing",
@@ -190,20 +184,6 @@ CLASSIF_EXACT = {
     "mobiliario":             "manutencao",
     "equipamentos":           "manutencao",
     "aviso_falta_de_agua":    ["manutencao","operacional"],
-    # "Bateria baixa" = subtag de manutenção, problema de fechadura (criada a partir de jun/2026).
-    # Costuma vir junto de "solicitacao_de_servico_manutencao" no mesmo ticket — a contagem por
-    # classificação já é deduplicada por ticket (ver tclassifs em _build_metrics), então não
-    # dobra o volume de manutenção mesmo quando as duas tags aparecem juntas.
-    "bateria_baixa":          "manutencao",
-    # ── Gestão de Reservas (adicionais) ───────────────────────
-    # "Estender reserva" — sinônimo de prorrogação, tag nova a partir de jun/2026.
-    "estender_reserva":       "gestao_reservas",
-    # ── Contato Ativo (adicionais) ────────────────────────────
-    # "Reputação ativo" — contato proativo de reputação, tratar como Contato Ativo.
-    "reputacao_ativo":        "contato_ativo",
-    # ── Serviços Solicitados (adicionais) ─────────────────────
-    # "Serviço adicional limpeza" — equivalente a "solicitacao_de_servico_limpeza".
-    "servico_adicional_limpeza": "servicos",
     # ── Contato Ativo ────────────────────────────────────────
     "contato_ativo":                        "contato_ativo",
     "contato_ativo_comunicacoes":           "contato_ativo",
@@ -338,12 +318,6 @@ LABELS = {
     "contato_ativo_comunicacoes":"Contato ativo — comunicações",
     "contato_ativo_cobranca":"Contato ativo — cobrança",
     "contato_ativo_autorizacao_entrada":"Contato ativo — autorização de entrada",
-    # ── Reclassificações definidas em jul/2026 (tags novas a partir de jun/2026) ──
-    "bateria_baixa":"Bateria baixa (fechadura)",
-    "atendimento_medio":"Atendimento médio",
-    "estender_reserva":"Estender reserva",
-    "reputacao_ativo":"Reputação ativo",
-    "servico_adicional_limpeza":"Serviço adicional — limpeza",
 }
 
 # ── Funções auxiliares ───────────────────────────────────────
@@ -403,6 +377,7 @@ def is_motivo(tag):
     t = tag.lower().strip()
     if t in TAGS_STATUS_CLIENTE: return False
     if t in MAPA_PRIORIDADE: return False
+    if t in TAGS_AUTOMATICAS_EXCLUIR: return False  # tags automáticas sem valor analítico
     if t.startswith("hospedado_"): return False  # tags de localização
     if detect_emp(t): return False
     return True
@@ -636,6 +611,7 @@ def _tags_pendentes(all_tags_counter):
         t = tag.lower().strip()
         if t in TAGS_STATUS_CLIENTE: continue
         if t in MAPA_PRIORIDADE: continue
+        if t in TAGS_AUTOMATICAS_EXCLUIR: continue
         if t.startswith("hospedado_"): continue
         if detect_emp(t): continue
         cids = classify(t)
