@@ -41,7 +41,8 @@ EMPREEND_KEYWORDS = [
     ("the spot one","The Spot One"),("the_spot_one","The Spot One"),("tso","The Spot One"),
     ("guarulhos","Guarulhos Aeroporto"),
     ("princess","Princess Curitiba"),
-    ("bk30 largo do arouche","BK30 Largo do Arouche"),("bk30 santana","BK30 Santana"),
+    ("bk30 largo do arouche","BK30 Largo do Arouche"),("bk30_largo_do_arouche","BK30 Largo do Arouche"),
+    ("bk30 santana","BK30 Santana"),("bk30_santana","BK30 Santana"),
     ("restinga","Restinga"),
     ("ipiranga","Ipiranga"),("ip alto","Ipiranga"),
     # ── Inativos — reconhecidos para filtro, não listados nos ativos ──
@@ -155,7 +156,7 @@ CLASSIF_EXACT = {
     "mini_mercado":                             "servicos",
     "lavanderia_omo":                           "servicos",
     "cafe_da_manha":                            "servicos",
-    "servico_adicional_de_limpeza":             "servicos",
+    "servico_adicional_limpeza":                "servicos",
     # ── Manutenção ───────────────────────────────────────────
     "solicitacao_de_servico_manutencao":    ["servicos","manutencao"],
     "ar_condicionado":                      "manutencao",
@@ -164,6 +165,7 @@ CLASSIF_EXACT = {
     "item_faltante_na_unidade":             ["manutencao","operacional"],
     "aviso_de_falta_de_energia":            ["manutencao","operacional"],
     "problemas_fechadura":                  "manutencao",
+    "bateria_baixa":                        "manutencao",
     # ── Problemas com Limpeza ────────────────────────────────
     "problemas_com_limpeza":    "limpeza",
     "reclamacao_de_limpeza":    "limpeza",
