@@ -20,9 +20,6 @@ TAGS_STATUS_CLIENTE = {
 }
 MAPA_PRIORIDADE = {"prioridade_alta":"Alta","prioridade_media":"Média","prioridade_baixa":"Baixa"}
 
-# Tags automáticas do sistema — sem valor analítico, retiradas da dashboard
-TAGS_AUTOMATICAS_EXCLUIR = {"teste_droz", "ja_hospedei"}
-
 # Empreendimentos ativos (lista oficial — item 4)
 EMPREEND_ATIVOS = {
     "Linked Batel","PUC","Cais","Atrium","Upper West",
@@ -41,18 +38,13 @@ EMPREEND_KEYWORDS = [
     ("the spot one","The Spot One"),("the_spot_one","The Spot One"),("tso","The Spot One"),
     ("guarulhos","Guarulhos Aeroporto"),
     ("princess","Princess Curitiba"),
-    ("bk30 largo do arouche","BK30 Largo do Arouche"),("bk30_largo_do_arouche","BK30 Largo do Arouche"),
-    ("bk30 santana","BK30 Santana"),("bk30_santana","BK30 Santana"),
+    ("bk30 largo do arouche","BK30 Largo do Arouche"),("bk30 santana","BK30 Santana"),
     ("restinga","Restinga"),
     ("ipiranga","Ipiranga"),("ip alto","Ipiranga"),
     # ── Inativos — reconhecidos para filtro, não listados nos ativos ──
     ("gru","Guarulhos Aeroporto"),
     ("oscar freire","Oscar Freire"),("oscar_freire","Oscar Freire"),
     ("berrini","Berrini"),
-    ("xtay privillege botafogo","Xtay Privillege Botafogo"),("xtay_privillege_botafogo","Xtay Privillege Botafogo"),
-    ("botafogo","Botafogo"),
-    ("arouche","Arouche"),
-    ("santana","Santana"),
     ("upper","Upper West"),("simple","Simple Smart"),
     ("cais","Cais"),("atrium","Atrium"),("fuji","Fuji"),
     ("soho","Soho"),("oslo","Oslo"),("puc","PUC"),
@@ -97,7 +89,6 @@ CLASSIF_EXACT = {
     "estacionamento_dificuldades_de_acesso":                "recepcao_digital",
     "estacionamento_duvidas":                               "recepcao_digital",
     "estacionamento_reserva":                               "recepcao_digital",
-    "instrucoes_checkin":                                   "recepcao_digital",
     # ── Tech ─────────────────────────────────────────────────
     "check_in_erro_de_verificacao":         "tech",
     "check_in_manual_documento_digital":    "tech",
@@ -119,7 +110,6 @@ CLASSIF_EXACT = {
     "reembolso":                                        "gestao_reservas",
     "suspeita_de_fraude":                               "gestao_reservas",
     "alteracao_de_dados_cadastrais":                    "gestao_reservas",
-    "estender_reserva":                                 "gestao_reservas",
     # ── Comercial ────────────────────────────────────────────
     "atendimento-comercial":                        "comercial",
     "comercial":                                    "comercial",
@@ -156,7 +146,6 @@ CLASSIF_EXACT = {
     "mini_mercado":                             "servicos",
     "lavanderia_omo":                           "servicos",
     "cafe_da_manha":                            "servicos",
-    "servico_adicional_limpeza":                "servicos",
     # ── Manutenção ───────────────────────────────────────────
     "solicitacao_de_servico_manutencao":    ["servicos","manutencao"],
     "ar_condicionado":                      "manutencao",
@@ -164,13 +153,10 @@ CLASSIF_EXACT = {
     "item_danificado_no_apto":              ["manutencao","operacional"],
     "item_faltante_na_unidade":             ["manutencao","operacional"],
     "aviso_de_falta_de_energia":            ["manutencao","operacional"],
-    "problemas_fechadura":                  "manutencao",
-    "bateria_baixa":                        "manutencao",
     # ── Problemas com Limpeza ────────────────────────────────
     "problemas_com_limpeza":    "limpeza",
     "reclamacao_de_limpeza":    "limpeza",
     "limpeza_nao_realizada":    "limpeza",
-    "problemas_com_enxoval":    "limpeza",
     # ── Gestão Operacional ───────────────────────────────────
     "reclamacao_da_vista":      "operacional",
     "reclamacao_de_barulho":    "operacional",
@@ -179,12 +165,10 @@ CLASSIF_EXACT = {
     "feedback_estadia":         "operacional",
     "achados_e_perdidos":       "operacional",
     "conversa_operacional":     "operacional",
-    "acesso_indevido":          "operacional",
     # ── Marketing e Relacionamento ───────────────────────────
     "mkt_hospede_frequent": "marketing",
     "hospede_mkt":          "marketing",
     "trabalhe_conosco":     "marketing",
-    "atendimento_medio":    "marketing",
     # ── Tech (adicionais) ────────────────────────────────────
     "erro_de_verificacao_checkin_manual": "tech",
     "erro_senha_null":                    "tech",
@@ -198,7 +182,6 @@ CLASSIF_EXACT = {
     "contato_ativo_comunicacoes":           "contato_ativo",
     "contato_ativo_cobranca":               "contato_ativo",
     "contato_ativo_autorizacao_entrada":    "contato_ativo",
-    "reputacao_ativo":                      "contato_ativo",
     # ── Improdutivos ─────────────────────────────────────────
     "falta_de_interacao":   "improdutivos",
     "sem_retorno":          "improdutivos",
@@ -387,7 +370,6 @@ def is_motivo(tag):
     t = tag.lower().strip()
     if t in TAGS_STATUS_CLIENTE: return False
     if t in MAPA_PRIORIDADE: return False
-    if t in TAGS_AUTOMATICAS_EXCLUIR: return False  # tags automáticas sem valor analítico
     if t.startswith("hospedado_"): return False  # tags de localização
     if detect_emp(t): return False
     return True
@@ -611,6 +593,25 @@ def _volume_insights(vd):
         "trend_dir": trend_dir,
     }
 
+def _evolucao_list(mes_counts, meses_ordenados):
+    """Converte {mes_key: count} num histórico ordenado, no mesmo formato de 'meses' (item novo)."""
+    return [{"d": NM.get(mk[5:7], mk[5:7]), "c": mes_counts.get(mk, 0), "k": mk} for mk in meses_ordenados]
+
+def _attach_evolucao(metrics, tag_mes_geral, tag_mes_emp, meses_ordenados):
+    """
+    Anexa 'evolucao' (histórico mensal) a cada tag dentro de classifs.top_tags
+    e a cada motivo dentro de empreendimentos.top_motivos — item novo.
+    O histórico é sempre a série completa (todos os meses), independente do
+    período/mês selecionado na dash, para permitir ver a tendência real da tag.
+    """
+    for classif in metrics.get("classifs", []):
+        for t in classif.get("top_tags", []):
+            t["evolucao"] = _evolucao_list(tag_mes_geral.get(t["label"], {}), meses_ordenados)
+    for emp in metrics.get("empreendimentos", []):
+        emp_dict = tag_mes_emp.get(emp["nome"], {})
+        for t in emp.get("top_motivos", []):
+            t["evolucao"] = _evolucao_list(emp_dict.get(t["label"], {}), meses_ordenados)
+
 def _tags_pendentes(all_tags_counter):
     """
     Retorna tags que não pertencem a nenhuma categoria — item 10.
@@ -621,7 +622,6 @@ def _tags_pendentes(all_tags_counter):
         t = tag.lower().strip()
         if t in TAGS_STATUS_CLIENTE: continue
         if t in MAPA_PRIORIDADE: continue
-        if t in TAGS_AUTOMATICAS_EXCLUIR: continue
         if t.startswith("hospedado_"): continue
         if detect_emp(t): continue
         cids = classify(t)
@@ -702,6 +702,32 @@ def processar(rows_droz, rows_occ=None):
     all_tids = list(ticket_base.keys())
     gm = _build_metrics(all_tids, ticket_base, ticket_tags, occ_agg)
 
+    # 4.5 Evolução mensal por tag — geral e por empreendimento (novo)
+    # Pedido: mostrar, dentro de cada tema e de cada empreendimento, a tendência
+    # mês a mês da tag predominante (não só o total do período selecionado).
+    meses_ordenados = sorted(vm.keys())
+    tag_mes_geral = defaultdict(lambda: defaultdict(int))
+    tag_mes_emp = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+    for tid, base in ticket_base.items():
+        dt = base["data"]
+        if not dt:
+            continue
+        mes_key = dt.strftime("%Y-%m")
+        tags = [t.strip() for t in ticket_tags.get(tid, [])]
+        mot = [t for t in tags if is_motivo(t)]
+        emps = {detect_emp(t) for t in tags if detect_emp(t)}
+        emps = {e for e in emps if e in EMPREEND_ATIVOS}
+        seen_labels = set()
+        for tag in mot:
+            label = lbl(tag)
+            if label in seen_labels:
+                continue  # evita contar a mesma tag 2x no mesmo ticket
+            seen_labels.add(label)
+            tag_mes_geral[label][mes_key] += 1
+            for e in emps:
+                tag_mes_emp[e][label][mes_key] += 1
+    _attach_evolucao(gm, tag_mes_geral, tag_mes_emp, meses_ordenados)
+
     # 5. Volume charts
     dias_s = sorted(vd.items())
     seen_w = []; seen_ws = set()
@@ -718,6 +744,7 @@ def processar(rows_droz, rows_occ=None):
         month_tids = [tid for tid, base in ticket_base.items()
                       if base["data"] and base["data"].strftime("%Y-%m") == mes_key]
         mm = _build_metrics(month_tids, ticket_base, ticket_tags, occ_agg)
+        _attach_evolucao(mm, tag_mes_geral, tag_mes_emp, meses_ordenados)
         month_dias = [{"d":d[8:]+"/"+d[5:7],"c":c}
                       for d,c in sorted(vd.items()) if d[:7]==mes_key]
         month_vd = Counter({d: c for d, c in vd.items() if d[:7] == mes_key})
