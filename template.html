@@ -239,6 +239,14 @@ select:focus{border-color:var(--orange)}
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div class="main" id="section-atendimento">
 
+  <div class="view-toggle-bar" style="display:flex;align-items:center;gap:10px;margin:4px 0 14px;flex-wrap:wrap">
+    <div class="main-tabs" id="view-mode-tabs">
+      <button class="main-tab active" id="vtab-geral" onclick="setViewMode('geral')">Geral</button>
+      <button class="main-tab" id="vtab-empreendimento" onclick="setViewMode('empreendimento')">Por Empreendimento</button>
+    </div>
+    <select id="emp-focus-select" onchange="setActiveEmp(this.value)" style="display:none;max-width:260px;margin-bottom:0"></select>
+  </div>
+
   <div class="section-label">Indicadores gerais · <span id="periodo-label"></span></div>
   <div class="kpi-grid">
     <div class="kpi accent">
@@ -261,17 +269,23 @@ select:focus{border-color:var(--orange)}
       <div class="kpi-val" id="kpi-ttf">—</div>
       <div class="kpi-sub">minutos · <span style="color:var(--text3)">meta: 40 min</span></div>
     </div>
-    <div class="kpi">
+    <div class="kpi" id="kpi-empreend-card">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-      <div class="kpi-label">Empreendimentos</div>
+      <div class="kpi-label" id="kpi-empreend-label">Empreendimentos</div>
       <div class="kpi-val" id="kpi-empreend">—</div>
-      <div class="kpi-sub">com atendimentos</div>
+      <div class="kpi-sub" id="kpi-empreend-sub">com atendimentos</div>
     </div>
     <div class="kpi">
       <div class="kpi-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
       <div class="kpi-label">Maior tema</div>
       <div class="kpi-val" style="font-size:14px;margin-top:6px" id="kpi-top-classif">—</div>
       <div class="kpi-sub" id="kpi-top-classif-n"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
+      <div class="kpi-label">Tag mais usada no maior tema</div>
+      <div class="kpi-val" style="font-size:14px;margin-top:6px" id="kpi-top-tag">—</div>
+      <div class="kpi-sub" id="kpi-top-tag-n"></div>
     </div>
   </div>
 
@@ -281,8 +295,16 @@ select:focus{border-color:var(--orange)}
     <div class="card-title">Comportamento do volume de atendimentos</div>
     <div class="vol-insights" id="vol-insights-grid"></div>
     <div id="vol-insight-text"></div>
+    <div id="peak-day-detail-box"></div>
     <div class="card-title" style="margin-top:18px">Atendimentos por período <span class="card-sub" id="volume-sub"></span></div>
     <div class="ch" style="height:200px"><canvas id="chart-vol"></canvas></div>
+  </div>
+
+  <!-- Produtividade x Volume — novo -->
+  <div class="section-label">Produtividade</div>
+  <div class="card" id="produtividade-card">
+    <div class="card-title">Volume, tempo de resposta e de fechamento</div>
+    <div id="produtividade-insight-box"></div>
   </div>
 
   <!-- Temas — item 1 (insights proporcionais + %) -->
@@ -317,6 +339,8 @@ select:focus{border-color:var(--orange)}
     </div>
   </div>
 
+  <div id="geral-only-sections">
+
   <!-- Empreendimentos — item 4 (apenas ativos) -->
   <div class="section-label">Empreendimentos ativos</div>
   <div class="g21">
@@ -324,16 +348,9 @@ select:focus{border-color:var(--orange)}
       <div class="card-title">Volume por empreendimento <span class="card-sub">· apenas propriedades ativas</span></div>
       <div id="emp-list"></div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="card">
-        <div class="card-title">Por cluster</div>
-        <div class="ch" style="height:180px"><canvas id="chart-cluster"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Top motivos por empreendimento <span class="card-sub">· clique para ver a tendência mensal</span></div>
-        <select id="emp-select" onchange="renderEmpDetail()"></select>
-        <div id="emp-detail-tags"></div>
-      </div>
+    <div class="card">
+      <div class="card-title">Por cluster</div>
+      <div class="ch" style="height:180px"><canvas id="chart-cluster"></canvas></div>
     </div>
   </div>
 
@@ -409,6 +426,34 @@ select:focus{border-color:var(--orange)}
       Todas as tags estão classificadas.
     </div>
   </div>
+
+  </div><!-- /geral-only-sections -->
+
+  <!-- Visão focada em um empreendimento — novo -->
+  <div id="emp-only-sections" style="display:none">
+    <div class="section-label">Sobre este empreendimento</div>
+    <div class="card">
+      <div class="card-title" id="emp-focus-title">—</div>
+      <div id="emp-focus-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:6px"></div>
+    </div>
+
+    <div class="section-label">Top motivos deste empreendimento</div>
+    <div class="card">
+      <div class="card-title">Principais tags <span class="card-sub">· clique para ver a tendência mensal</span></div>
+      <div id="emp-detail-tags"></div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Limpeza <span class="card-sub">· tags deste empreendimento</span></div>
+        <div id="emp-focus-limpeza"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Manutenção <span class="card-sub">· tags deste empreendimento</span></div>
+        <div id="emp-focus-manutencao"></div>
+      </div>
+    </div>
+  </div><!-- /emp-only-sections -->
 
 </div><!-- /section-atendimento -->
 
@@ -490,6 +535,7 @@ var D = __DATA__;
 var chartVol=null, chartCluster=null, chartPrior=null;
 var chartLimpEmp=null, chartManutEmp=null, chartSemanal=null;
 var activeMonth='total', openClassif=null, activePriTab='Alta', openTagTrend=null;
+var viewMode='geral', activeEmpNome=null;
 var activeMainTab='atendimento';
 
 // ── Constantes de Meta ──────────────────────────────────────
@@ -570,6 +616,58 @@ function buildPeriodTabs() {
   document.getElementById('period-tabs').innerHTML = html;
 }
 
+function getGeralD() {
+  return activeMonth==='total' ? D : (D.por_mes[activeMonth]||D);
+}
+
+function getD() {
+  if (viewMode === 'empreendimento' && activeEmpNome && D.por_empreendimento && D.por_empreendimento[activeEmpNome]) {
+    var pe = D.por_empreendimento[activeEmpNome];
+    var scope = activeMonth === 'total' ? pe.total : (pe.por_mes[activeMonth] || pe.total);
+    return scope;
+  }
+  return getGeralD();
+}
+
+// Registro "resumo" do prédio (contagem, top motivos, ocupação, limpeza/manutenção)
+// já existente no recorte geral de período — reaproveitado em vez de duplicado.
+function getEmpSummary(nome) {
+  var g = getGeralD();
+  return (g.empreendimentos || []).find(function(e){ return e.nome === nome; }) || null;
+}
+
+function populateEmpFocusSelect() {
+  var sel = document.getElementById('emp-focus-select');
+  var nomes = Object.keys(D.por_empreendimento || {});
+  var prev = activeEmpNome;
+  sel.innerHTML = nomes.map(function(n){ return '<option value="'+n+'">'+n+'</option>'; }).join('');
+  if (prev && nomes.indexOf(prev) !== -1) {
+    sel.value = prev;
+  } else if (nomes.length) {
+    activeEmpNome = nomes[0];
+    sel.value = activeEmpNome;
+  }
+}
+
+function setViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('vtab-geral').classList.toggle('active', mode==='geral');
+  document.getElementById('vtab-empreendimento').classList.toggle('active', mode==='empreendimento');
+  document.getElementById('emp-focus-select').style.display = mode==='empreendimento' ? '' : 'none';
+  document.getElementById('geral-only-sections').style.display = mode==='geral' ? '' : 'none';
+  document.getElementById('emp-only-sections').style.display = mode==='empreendimento' ? '' : 'none';
+  if (mode==='empreendimento') {
+    populateEmpFocusSelect();
+  }
+  renderAll();
+}
+
+function setActiveEmp(nome) {
+  activeEmpNome = nome;
+  openTagTrend = null;
+  renderAll();
+}
+
 function setMonth(m) {
   activeMonth = m;
   buildPeriodTabs();
@@ -580,18 +678,23 @@ function renderAll() {
   renderKPIs();
   renderVolumeInsights();
   renderVolume();
+  renderProdutividade();
   renderClassifs();
   renderPriTags();
   renderPrioridade();
-  renderEmpreendimentos();
-  renderClusters();
   renderCanais();
-  renderLimpezaEmp();
-  renderManutencaoEmp();
-  renderSemanal();
-  renderStrategicInsights();
-  renderOCC();
-  renderTagsPendentes();
+  if (viewMode === 'geral') {
+    renderEmpreendimentos();
+    renderClusters();
+    renderLimpezaEmp();
+    renderManutencaoEmp();
+    renderSemanal();
+    renderStrategicInsights();
+    renderOCC();
+    renderTagsPendentes();
+  } else {
+    renderEmpFocus();
+  }
 }
 
 // ── KPIs ────────────────────────────────────────────────────
@@ -609,26 +712,48 @@ function renderKPIs() {
   document.getElementById('kpi-total').textContent = d.total.toLocaleString('pt-BR');
   document.getElementById('kpi-tpr').textContent = fmt(d.tpr_med);
   document.getElementById('kpi-ttf').textContent = fmt(d.ttf_med);
-  document.getElementById('periodo-label').textContent = getLabel();
+  document.getElementById('periodo-label').textContent = getLabel() + (viewMode==='empreendimento' && activeEmpNome ? ' · '+activeEmpNome : '');
   document.getElementById('ts').textContent = 'Gerado em ' + D.gerado_em;
   document.getElementById('footer').textContent = 'Dashboard CX Xtay · '+D.gerado_em+' · '+D.periodo;
-  document.getElementById('kpi-empreend').textContent = d.empreendimentos.filter(function(e){return e.count>0;}).length;
   document.getElementById('kpi-tpr-meta').innerHTML = metaPill(d.tpr_med, META_TPR, false);
   document.getElementById('kpi-ttf-meta').innerHTML = metaPill(d.ttf_med, META_TTF, false);
+
+  if (viewMode === 'empreendimento' && activeEmpNome) {
+    var summary = getEmpSummary(activeEmpNome);
+    document.getElementById('kpi-empreend-label').textContent = 'Cluster';
+    document.getElementById('kpi-empreend').textContent = summary ? summary.cluster : '—';
+    document.getElementById('kpi-empreend-sub').textContent = activeEmpNome;
+  } else {
+    document.getElementById('kpi-empreend-label').textContent = 'Empreendimentos';
+    document.getElementById('kpi-empreend').textContent = d.empreendimentos.filter(function(e){return e.count>0;}).length;
+    document.getElementById('kpi-empreend-sub').textContent = 'com atendimentos';
+  }
 
   var top = d.classifs.slice().sort(function(a,b){return b.count-a.count;})[0];
   if(top && top.count>0) {
     document.getElementById('kpi-top-classif').textContent = top.label;
     document.getElementById('kpi-top-classif-n').textContent = top.count.toLocaleString('pt-BR')+' tickets ('+top.pct+'%)';
+  } else {
+    document.getElementById('kpi-top-classif').textContent = '—';
+    document.getElementById('kpi-top-classif-n').textContent = '';
+  }
+  var topTag = (top && top.top_tags && top.top_tags.length) ? top.top_tags[0] : null;
+  if (topTag) {
+    document.getElementById('kpi-top-tag').textContent = topTag.label;
+    document.getElementById('kpi-top-tag-n').textContent = topTag.count.toLocaleString('pt-BR')+' tickets · dentro de '+(top?top.label:'—');
+  } else {
+    document.getElementById('kpi-top-tag').textContent = '—';
+    document.getElementById('kpi-top-tag-n').textContent = '';
   }
 }
 
 // ── Volume Insights — item 13 ────────────────────────────────
 function renderVolumeInsights() {
-  var vi = (activeMonth==='total') ? D.volume_insights : (D.por_mes[activeMonth]||{}).volume_insights;
+  var vi = getD().volume_insights;
   var grid = document.getElementById('vol-insights-grid');
   var txtBox = document.getElementById('vol-insight-text');
-  if(!vi || !vi.max_day) { grid.innerHTML=''; txtBox.innerHTML=''; return; }
+  var peakBox = document.getElementById('peak-day-detail-box');
+  if(!vi || !vi.max_day) { grid.innerHTML=''; txtBox.innerHTML=''; peakBox.innerHTML=''; return; }
 
   var trendCls = vi.trend_dir==='crescimento' ? 'var(--red)' : vi.trend_dir==='redução' ? 'var(--green)' : 'var(--text2)';
   var trendTxt = vi.trend_pct!=null ? ((vi.trend_pct>0?'+':'')+vi.trend_pct+'% vs semana anterior') : 'dados insuficientes para tendência';
@@ -649,12 +774,77 @@ function renderVolumeInsights() {
     else insText += 'O volume mantém-se <strong>estável</strong> nas últimas semanas.';
   }
   txtBox.innerHTML = '<div class="insight-box">'+insText+'</div>';
+
+  // Detalhamento do dia de pico — novo (item: no dia de maior pico, qual empreendimento/tema/tag dominou)
+  var pd = vi.peak_day_detail;
+  if (pd) {
+    var partes = [];
+    if (pd.top_empreendimento && viewMode!=='empreendimento') partes.push('o empreendimento <strong>'+pd.top_empreendimento.nome+'</strong> ('+pd.top_empreendimento.count+' tickets)');
+    if (pd.top_tema) partes.push('o tema <strong>'+pd.top_tema.label+'</strong> ('+pd.top_tema.count+' tickets)');
+    if (pd.top_tag) partes.push('a tag <strong>'+pd.top_tag.label+'</strong> ('+pd.top_tag.count+' tickets)');
+    peakBox.innerHTML = partes.length
+      ? '<div class="insight-box" style="margin-top:8px">No dia de maior pico ('+vi.max_day.date_fmt+', '+pd.total+' atendimentos), predominaram: '+partes.join('; ')+'.</div>'
+      : '';
+  } else {
+    peakBox.innerHTML = '';
+  }
 }
 
 // ── Volume Chart ─────────────────────────────────────────────
+// ── Produtividade x Volume — novo ─────────────────────────────
+function renderProdutividade() {
+  var box = document.getElementById('produtividade-insight-box');
+  var pi = D.produtividade_insights;
+  if (!pi || !pi.suficiente) {
+    box.innerHTML = '<span style="font-size:12px;color:var(--text3)">Histórico insuficiente para relacionar volume e produtividade (mínimo de 3 meses com dados).</span>';
+    return;
+  }
+  function corrLabel(c) {
+    if (c==null) return 'sem correlação clara';
+    var abs = Math.abs(c);
+    var forca = abs>=0.7 ? 'forte' : abs>=0.4 ? 'moderada' : 'fraca';
+    var dir = c>0 ? 'positiva' : 'negativa';
+    return forca+' e '+dir+' (coef. '+c.toFixed(2)+')';
+  }
+  var tprTxt = corrLabel(pi.corr_volume_tpr);
+  var ttfTxt = corrLabel(pi.corr_volume_ttf);
+  var pico = pi.mes_maior_volume, vale = pi.mes_menor_volume;
+
+  var html = '<div class="insight-box">';
+  html += 'A correlação entre volume mensal e <strong>tempo de 1ª resposta</strong> é '+tprTxt+'. ';
+  html += 'A correlação entre volume mensal e <strong>tempo até fechamento</strong> é '+ttfTxt+'. ';
+  if (pi.corr_volume_tpr!=null && pi.corr_volume_tpr>=0.4) {
+    html += 'Quando o volume sobe, o tempo de resposta tende a piorar junto — vale olhar dimensionamento de equipe nos meses de pico.';
+  } else if (pi.corr_volume_tpr!=null && pi.corr_volume_tpr<=-0.4) {
+    html += 'O tempo de resposta melhora nos meses de maior volume — pode indicar boa adaptação da equipe a picos, ou um mix de tags mais simples nesses meses.';
+  } else {
+    html += 'Não há uma relação clara entre volume e tempo de resposta neste período — outros fatores (mix de tags, escala de equipe) provavelmente pesam mais.';
+  }
+  html += '</div>';
+
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">';
+  html += '<div style="background:var(--bg);border-radius:8px;padding:12px 14px">'+
+    '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600">Mês de maior volume</div>'+
+    '<div style="font-size:16px;font-weight:700;margin-top:2px">'+pico.label+' — '+pico.total.toLocaleString('pt-BR')+' tickets</div>'+
+    '<div style="font-size:12px;color:var(--text2);margin-top:4px">TPR '+pico.tpr_med+' min · TTF '+pico.ttf_med+' min</div></div>';
+  html += '<div style="background:var(--bg);border-radius:8px;padding:12px 14px">'+
+    '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600">Mês de menor volume</div>'+
+    '<div style="font-size:16px;font-weight:700;margin-top:2px">'+vale.label+' — '+vale.total.toLocaleString('pt-BR')+' tickets</div>'+
+    '<div style="font-size:12px;color:var(--text2);margin-top:4px">TPR '+vale.tpr_med+' min · TTF '+vale.ttf_med+' min</div></div>';
+  html += '</div>';
+
+  box.innerHTML = html;
+}
+
 function renderVolume() {
   var labels, data, isBar;
-  if(activeMonth==='total') {
+  if (viewMode === 'empreendimento' && activeEmpNome) {
+    var dias = getD().dias || [];
+    labels = dias.map(function(x){ return x.d.length===10 ? x.d.slice(8,10)+'/'+x.d.slice(5,7) : x.d; });
+    data = dias.map(function(x){return x.c;});
+    isBar = false;
+    document.getElementById('volume-sub').textContent = '· por dia · '+activeEmpNome;
+  } else if(activeMonth==='total') {
     labels = D.meses.map(function(x){return x.d;});
     data = D.meses.map(function(x){return x.c;});
     isBar = true;
@@ -870,37 +1060,62 @@ function renderEmpreendimentos() {
       occHtml+taxaHtml+'</div>';
   });
   document.getElementById('emp-list').innerHTML = head + html;
-
-  // Select para detalhe
-  var sel = document.getElementById('emp-select');
-  var prev = sel.value;
-  sel.innerHTML = d.empreendimentos.filter(function(e){return e.count>0;}).map(function(e){
-    return '<option value="'+e.nome+'">'+e.nome+' ('+e.count+')</option>';
-  }).join('');
-  if(prev){ var found=d.empreendimentos.find(function(e){return e.nome===prev;}); if(found) sel.value=prev; }
-  renderEmpDetail();
 }
 
-function renderEmpDetail() {
+function renderEmpFocus() {
+  if (!activeEmpNome) return;
+  var summary = getEmpSummary(activeEmpNome);
+  var pe = (D.por_empreendimento || {})[activeEmpNome];
+
+  document.getElementById('emp-focus-title').textContent = activeEmpNome + (summary ? ' · '+summary.cluster : '');
+  var box = document.getElementById('emp-focus-summary');
   var d = getD();
-  var nome = document.getElementById('emp-select').value;
-  var emp = null; d.empreendimentos.forEach(function(e){if(e.nome===nome)emp=e;});
-  var box = document.getElementById('emp-detail-tags');
-  openTagTrend = null;
-  if(!emp || emp.top_motivos.length===0){
-    box.innerHTML = '<span style="font-size:12px;color:var(--text3)">Sem dados no período.</span>';
-    return;
+  var cards = [
+    {label:'Atendimentos', val: d.total!=null ? d.total.toLocaleString('pt-BR') : '—'},
+    {label:'1ª resposta (média)', val: fmt(d.tpr_med)+' min'},
+    {label:'Até fechamento (média)', val: fmt(d.ttf_med)+' min'},
+  ];
+  if (summary) {
+    cards.push({label:'Ocupação', val: summary.occ_pct!=null ? summary.occ_pct.toFixed(0)+'%' : '—'});
+    cards.push({label:'Taxa de contato', val: summary.taxa_contato!=null ? summary.taxa_contato.toFixed(0)+'%' : '—'});
   }
-  var max = emp.top_motivos[0].count;
-  box.innerHTML = emp.top_motivos.map(function(t,idx){
-    var w = Math.round(t.count/max*100);
-    var key = 'emp-'+idx;
-    return '<div class="tag-item" onclick="event.stopPropagation();toggleTagTrend(\''+key+'\')">'+
-      '<span class="tag-item-label">'+t.label+'</span>'+
-      '<div class="tag-item-bar"><div class="tag-item-fill" style="width:'+w+'%;background:#FF6A13"></div></div>'+
-      '<span class="tag-item-count">'+t.count+'</span></div>'+
-      tagTrendBlock(key, t.evolucao, '#FF6A13');
+  box.innerHTML = cards.map(function(c){
+    return '<div style="background:var(--bg);border-radius:8px;padding:10px 12px">'+
+      '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600">'+c.label+'</div>'+
+      '<div style="font-size:16px;font-weight:700;margin-top:2px">'+c.val+'</div></div>';
   }).join('');
+
+  // Top motivos — reaproveita o que já existe no recorte geral por empreendimento
+  var motBox = document.getElementById('emp-detail-tags');
+  openTagTrend = null;
+  if (!summary || !summary.top_motivos || summary.top_motivos.length===0) {
+    motBox.innerHTML = '<span style="font-size:12px;color:var(--text3)">Sem dados no período.</span>';
+  } else {
+    var max = summary.top_motivos[0].count;
+    motBox.innerHTML = summary.top_motivos.map(function(t,idx){
+      var w = Math.round(t.count/max*100);
+      var key = 'emp-'+idx;
+      return '<div class="tag-item" onclick="event.stopPropagation();toggleTagTrend(\''+key+'\')">'+
+        '<span class="tag-item-label">'+t.label+'</span>'+
+        '<div class="tag-item-bar"><div class="tag-item-fill" style="width:'+w+'%;background:#FF6A13"></div></div>'+
+        '<span class="tag-item-count">'+t.count+'</span></div>'+
+        tagTrendBlock(key, t.evolucao, '#FF6A13');
+    }).join('');
+  }
+
+  // Limpeza / Manutenção deste prédio — reaproveita manut_tags/limp_tags já existentes
+  function tagListHtml(tags) {
+    if (!tags || tags.length===0) return '<span style="font-size:12px;color:var(--text3)">Sem ocorrências no período.</span>';
+    var max = tags[0].count;
+    return tags.map(function(t){
+      var w = Math.round(t.count/max*100);
+      return '<div class="tag-item"><span class="tag-item-label">'+t.label+'</span>'+
+        '<div class="tag-item-bar"><div class="tag-item-fill" style="width:'+w+'%;background:#795548"></div></div>'+
+        '<span class="tag-item-count">'+t.count+'</span></div>';
+    }).join('');
+  }
+  document.getElementById('emp-focus-limpeza').innerHTML = tagListHtml(summary ? summary.limp_tags : null);
+  document.getElementById('emp-focus-manutencao').innerHTML = tagListHtml(summary ? summary.manut_tags : null);
 }
 
 function renderClusters() {
