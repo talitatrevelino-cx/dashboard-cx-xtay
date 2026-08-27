@@ -6,6 +6,7 @@ Uso local: python3 processar_dados.py  (lê Base de Atendimento.xlsx)
 import json, re
 from collections import defaultdict, Counter
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 
 # GMT-3 (Horário de Brasília) — item 12
 TZ_BR = timezone(timedelta(hours=-3))
@@ -315,6 +316,7 @@ LABELS = {
 
 # ── Funções auxiliares ───────────────────────────────────────
 
+@lru_cache(maxsize=4096)
 def lbl(tag):
     t = tag.lower().strip()
     return LABELS.get(t, t.replace("_"," ").replace("-"," ").title())
@@ -348,12 +350,14 @@ def avg(lst):
     lst = [x for x in lst if x is not None and x>=0]
     return round(sum(lst)/len(lst),1) if lst else None
 
+@lru_cache(maxsize=4096)
 def detect_emp(tag):
     t = tag.lower()
     for kw, nome in EMPREEND_KEYWORDS:
         if kw in t: return nome
     return None
 
+@lru_cache(maxsize=4096)
 def classify(tag):
     t = tag.lower().strip()
     cids = set()
@@ -365,6 +369,7 @@ def classify(tag):
         else: cids.add(val)
     return cids
 
+@lru_cache(maxsize=4096)
 def is_motivo(tag):
     """Retorna True se a tag deve ser contada como motivo de contato."""
     t = tag.lower().strip()
@@ -373,6 +378,7 @@ def is_motivo(tag):
     if t.startswith("hospedado_"): return False  # tags de localização
     if detect_emp(t): return False
     return True
+
 
 def _safe_float(val):
     v = _v(val)
@@ -469,11 +475,27 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None, meses_ordena
                 pri_tag_c[ticket_prio][lbl(mt)] += 1
 
         tclassifs = set()
+        tag_cids = []
         for tag in mot:
-            for cid in classify(tag):
-                tclassifs.add(cid)
-                lt = lbl(tag)
-                ctags[cid][lt]+=1
+            cids = classify(tag)
+            if cids:
+                tag_cids.append((tag, cids))
+                tclassifs.update(cids)
+
+        # Regra: tag improdutiva (sem_retorno, falta_de_interacao, teste, teste_droz)
+        # só conta como "Improdutivos" quando é a ÚNICA classificação do ticket.
+        # Se o protocolo também tem uma tag classificada em outra categoria, essa
+        # tag improdutiva é acessória e já está sendo contabilizada em outro lugar
+        # — não deve inflar o total de Improdutivos.
+        if "improdutivos" in tclassifs and len(tclassifs) > 1:
+            tclassifs.discard("improdutivos")
+
+        for tag, cids in tag_cids:
+            lt = lbl(tag)
+            for cid in cids:
+                if cid not in tclassifs:
+                    continue
+                ctags[cid][lt] += 1
                 if mes_key:
                     cid_tag_mes[cid][lt][mes_key] += 1
         for cid in tclassifs:
@@ -619,6 +641,111 @@ def _evolucao_list(mes_counts, meses_ordenados):
         return []
     return [{"d": NM.get(mk[5:7], mk[5:7]), "c": mes_counts.get(mk, 0), "k": mk} for mk in meses_ordenados]
 
+def _peak_day_detail(peak_date, ticket_base, ticket_tags, occ_agg, meses_ordenados, tids_pool=None):
+    """
+    Para o dia de maior pico, identifica o empreendimento, o tema e a tag
+    predominantes naquele dia específico (novo).
+    'tids_pool' restringe a busca ao recorte que gerou o pico (ex: só os
+    tickets de um prédio) — sem isso, a busca escanearia a base inteira e
+    poderia misturar dados de outros prédios no mesmo dia.
+    """
+    if not peak_date:
+        return None
+    pool = tids_pool if tids_pool is not None else ticket_base.keys()
+    day_tids = [tid for tid in pool
+                if ticket_base[tid]["data"] and ticket_base[tid]["data"].strftime("%Y-%m-%d") == peak_date]
+    if not day_tids:
+        return None
+    dm = _build_metrics(day_tids, ticket_base, ticket_tags, occ_agg, meses_ordenados=meses_ordenados)
+    top_emp = dm["empreendimentos"][0] if dm["empreendimentos"] and dm["empreendimentos"][0]["count"] > 0 else None
+    classifs_com_dados = [c for c in dm["classifs"] if c["count"] > 0]
+    top_classif = max(classifs_com_dados, key=lambda c: c["count"]) if classifs_com_dados else None
+    top_tag = top_classif["top_tags"][0] if top_classif and top_classif["top_tags"] else None
+    return {
+        "total": dm["total"],
+        "top_empreendimento": {"nome": top_emp["nome"], "count": top_emp["count"]} if top_emp else None,
+        "top_tema": {"label": top_classif["label"], "count": top_classif["count"]} if top_classif else None,
+        "top_tag": {"label": top_tag["label"], "count": top_tag["count"]} if top_tag else None,
+    }
+
+def _pearson(xs, ys):
+    """Coeficiente de correlação de Pearson simples, sem depender de libs externas."""
+    n = len(xs)
+    if n < 3:
+        return None
+    mx = sum(xs) / n; my = sum(ys) / n
+    cov = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    vx = sum((x - mx) ** 2 for x in xs)
+    vy = sum((y - my) ** 2 for y in ys)
+    if vx == 0 or vy == 0:
+        return None
+    return round(cov / (vx ** 0.5 * vy ** 0.5), 2)
+
+def _produtividade_insights(por_mes, meses_ordenados):
+    """
+    Relaciona volume de atendimentos com TPR (1ª resposta) e TTF (fechamento)
+    mês a mês — item novo (correlação simples + mês de pico vs mês mais fraco).
+    """
+    pontos = []
+    for mk in meses_ordenados:
+        mm = por_mes.get(mk, {})
+        if mm.get("tpr_med") is not None and mm.get("ttf_med") is not None and mm.get("total"):
+            pontos.append({
+                "mes": mk, "label": NM.get(mk[5:7], mk[5:7]),
+                "total": mm["total"], "tpr_med": mm["tpr_med"], "ttf_med": mm["ttf_med"],
+            })
+    if len(pontos) < 3:
+        return {"suficiente": False, "pontos": pontos}
+    vols = [p["total"] for p in pontos]
+    tprs_m = [p["tpr_med"] for p in pontos]
+    ttfs_m = [p["ttf_med"] for p in pontos]
+    pico = max(pontos, key=lambda p: p["total"])
+    vale = min(pontos, key=lambda p: p["total"])
+    return {
+        "suficiente": True,
+        "corr_volume_tpr": _pearson(vols, tprs_m),
+        "corr_volume_ttf": _pearson(vols, ttfs_m),
+        "mes_maior_volume": pico,
+        "mes_menor_volume": vale,
+        "pontos": pontos,
+    }
+
+def _build_emp_scope(tids, ticket_base, ticket_tags, occ_agg, meses_ordenados, include_evolucao, include_peak_detail=True):
+    """
+    Métricas completas para UM empreendimento (geral, ou já filtrado por mês) —
+    item novo. Não repete o que já existe em 'empreendimentos' (contagem, top
+    motivos, ocupação, limpeza/manutenção) — só o que ainda não existia nesse
+    recorte: temas, prioridades, canais e volume diário/pico.
+    Quando include_evolucao=False, a tendência mensal por tag não é recalculada
+    aqui (ela já existe completa no recorte "total" do prédio) — evita duplicar
+    o mesmo histórico em cada mês e inflar o tamanho do payload.
+    Quando include_peak_detail=False, pula o detalhamento do dia de pico (que
+    exige reprocessar métricas daquele dia) — usado nos recortes prédio+mês
+    para manter o tempo de geração sob controle; o detalhe de pico continua
+    disponível no recorte "total" de cada prédio.
+    """
+    mm = _build_metrics(tids, ticket_base, ticket_tags, occ_agg,
+                         meses_ordenados=meses_ordenados if include_evolucao else None)
+    vd_scope = Counter()
+    for tid in tids:
+        dt = ticket_base[tid]["data"]
+        if dt:
+            vd_scope[dt.strftime("%Y-%m-%d")] += 1
+    dias_scope = [{"d": d, "c": c} for d, c in sorted(vd_scope.items())]
+    vi_scope = _volume_insights(vd_scope)
+    if include_peak_detail and vi_scope.get("max_day"):
+        vi_scope["peak_day_detail"] = _peak_day_detail(
+            vi_scope["max_day"]["date"], ticket_base, ticket_tags, occ_agg, meses_ordenados, tids_pool=tids)
+    return {
+        "total": mm["total"], "tpr_med": mm["tpr_med"], "ttf_med": mm["ttf_med"],
+        "classifs": mm["classifs"],
+        "canais": mm["canais"],
+        "prioridades": mm["prioridades"],
+        "priority_tags": mm["priority_tags"],
+        "dias": dias_scope,
+        "volume_insights": vi_scope,
+    }
+
 def _tags_pendentes(all_tags_counter):
     """
     Retorna tags que não pertencem a nenhuma categoria — item 10.
@@ -681,6 +808,17 @@ def processar(rows_droz, rows_occ=None):
             vm[dt.strftime("%Y-%m")]+=1
             vs[sem_lbl(dt)]+=1
 
+    # 2.5 Índice ticket -> empreendimentos ativos (uma passada só, reaproveitado
+    # abaixo na visão completa por empreendimento — novo).
+    ticket_emps = {}
+    for tid in ticket_base:
+        es = {detect_emp(t) for t in ticket_tags.get(tid, []) if detect_emp(t)}
+        ticket_emps[tid] = {e for e in es if e in EMPREEND_ATIVOS}
+    emp_tids_map = defaultdict(list)
+    for tid, es in ticket_emps.items():
+        for e in es:
+            emp_tids_map[e].append(tid)
+
     # 3. Leitura de OCC — item 14
     # Estrutura atual: col0=Empreendimento, col1=TotalUnidades, col2=UnDisp,
     #                  col3=UnOcupadas, col4=DM, col5=Faturamento, col6=Ocupação%
@@ -731,10 +869,15 @@ def processar(rows_droz, rows_occ=None):
         month_dias = [{"d":d[8:]+"/"+d[5:7],"c":c}
                       for d,c in sorted(vd.items()) if d[:7]==mes_key]
         month_vd = Counter({d: c for d, c in vd.items() if d[:7] == mes_key})
+        month_insights = _volume_insights(month_vd)
+        if month_insights.get("max_day"):
+            month_insights["peak_day_detail"] = _peak_day_detail(
+                month_insights["max_day"]["date"], ticket_base, ticket_tags, occ_agg, meses_ordenados,
+                tids_pool=month_tids)
         por_mes[mes_key] = {
             **mm, "label": NM.get(mes_key[5:7], mes_key),
             "dias": month_dias,
-            "volume_insights": _volume_insights(month_vd),
+            "volume_insights": month_insights,
         }
 
     # 7. Tags pendentes de categorização — item 10
@@ -742,6 +885,12 @@ def processar(rows_droz, rows_occ=None):
 
     # 8. Volume insights globais — item 13
     vol_insights = _volume_insights(vd)
+    if vol_insights.get("max_day"):
+        vol_insights["peak_day_detail"] = _peak_day_detail(
+            vol_insights["max_day"]["date"], ticket_base, ticket_tags, occ_agg, meses_ordenados)
+
+    # 8.5 Produtividade x volume — correlação TPR/TTF com volume mensal (novo)
+    produtividade_insights = _produtividade_insights(por_mes, meses_ordenados)
 
     # 9. Período label
     pi = sorted(vm.keys())[0] if vm else ""; pf = sorted(vm.keys())[-1] if vm else ""
@@ -755,6 +904,30 @@ def processar(rows_droz, rows_occ=None):
         {"nome":nome, **vals}
         for nome, vals in occ_agg.items()
     ]
+
+    # 11. Visão completa por empreendimento — geral e cruzada com período (novo)
+    # Reaproveita o que já existe em "empreendimentos" (contagem, top motivos,
+    # ocupação, limpeza/manutenção) e adiciona só o que faltava nesse recorte:
+    # temas, prioridades, canais e volume diário/pico, por prédio.
+    por_empreendimento = {}
+    for nome in EMPREEND_ORDER:
+        emp_tids = emp_tids_map.get(nome, [])
+        if not emp_tids:
+            continue
+        total_scope = _build_emp_scope(
+            emp_tids, ticket_base, ticket_tags, occ_agg, meses_ordenados, include_evolucao=True)
+        por_mes_emp = {}
+        for mes_key in meses_ordenados:
+            mtids = [tid for tid in emp_tids
+                     if ticket_base[tid]["data"] and ticket_base[tid]["data"].strftime("%Y-%m") == mes_key]
+            if not mtids:
+                continue
+            scope = _build_emp_scope(
+                mtids, ticket_base, ticket_tags, occ_agg, meses_ordenados,
+                include_evolucao=False, include_peak_detail=False)
+            scope["label"] = NM.get(mes_key[5:7], mes_key)
+            por_mes_emp[mes_key] = scope
+        por_empreendimento[nome] = {"total": total_scope, "por_mes": por_mes_emp}
 
 
     return {
@@ -779,6 +952,8 @@ def processar(rows_droz, rows_occ=None):
         ),
         "occ": occ_lista,
         "por_mes": por_mes,
+        "por_empreendimento": por_empreendimento,
+        "produtividade_insights": produtividade_insights,
         "tags_pendentes": tags_pendentes,
         "volume_insights": vol_insights,
     }
