@@ -403,7 +403,7 @@ def _parse_mes_key(val, ano_base="2026"):
             return f"{yr}-{num}"
     return None
 
-def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
+def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None, meses_ordenados=None):
     """Agrega métricas para um conjunto de ticket IDs."""
     cc = defaultdict(int)
     ctpr = defaultdict(list); cttf = defaultdict(list); ctags = defaultdict(Counter)
@@ -418,11 +418,17 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
     limp_emp_tags  = defaultdict(Counter)   # {emp: {tag_label: count}}
     # Tags em atendimentos de prioridade — item 3
     pri_tag_c = {"Alta": Counter(), "Média": Counter(), "Baixa": Counter()}
+    # Evolução mensal por tag — geral e por empreendimento (novo)
+    # Calculado no MESMO laço que ctags/emp_m para garantir que a tendência
+    # mensal bate exatamente com os totais já exibidos na dash.
+    cid_tag_mes = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))   # {cid: {label: {mes_key: count}}}
+    emp_tag_mes = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))   # {emp: {label: {mes_key: count}}}
 
     for tid in tids:
         base = ticket_base[tid]
         tags = [t.strip() for t in ticket_tags.get(tid, [])]
         tpr = base["tpr"]; ttf = base["ttf"]
+        mes_key = base["data"].strftime("%Y-%m") if base["data"] else None
         if tpr is not None: tprs.append(tpr)
         if ttf is not None: ttfs.append(ttf)
         ag = base["agente"] or "Sem agente"
@@ -451,7 +457,11 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
 
         mot = [t for t in tags if is_motivo(t)]
         for e in emps:
-            for mt in mot: emp_m[e][lbl(mt)]+=1
+            for mt in mot:
+                lm = lbl(mt)
+                emp_m[e][lm]+=1
+                if mes_key:
+                    emp_tag_mes[e][lm][mes_key] += 1
 
         # Tags por prioridade — item 3
         if ticket_prio:
@@ -461,7 +471,11 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
         tclassifs = set()
         for tag in mot:
             for cid in classify(tag):
-                tclassifs.add(cid); ctags[cid][lbl(tag)]+=1
+                tclassifs.add(cid)
+                lt = lbl(tag)
+                ctags[cid][lt]+=1
+                if mes_key:
+                    cid_tag_mes[cid][lt][mes_key] += 1
         for cid in tclassifs:
             cc[cid]+=1; ctpr[cid].append(tpr); cttf[cid].append(ttf)
 
@@ -494,7 +508,10 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
             "id": cid, "label": CLASSIF_META[cid]["label"], "cor": CLASSIF_META[cid]["cor"],
             "count": cnt, "pct": pct,
             "tpr_med": avg(ctpr.get(cid,[])), "ttf_med": avg(cttf.get(cid,[])),
-            "top_tags": [{"label":k,"count":v} for k,v in ctags[cid].most_common(8)],
+            "top_tags": [
+                {"label": k, "count": v, "evolucao": _evolucao_list(cid_tag_mes[cid].get(k, {}), meses_ordenados)}
+                for k, v in ctags[cid].most_common(8)
+            ],
         })
 
     emps_lista = []
@@ -506,7 +523,10 @@ def _build_metrics(tids, ticket_base, ticket_tags, occ_lookup=None):
         un_total = occ.get("un_total", 0)
         taxa = round(tickets / reservas * 100, 1) if reservas > 0 else None
         pct_emp = round(tickets / total * 100, 1) if total > 0 else 0
-        top8 = [{"label":k,"count":v} for k,v in emp_m[nome].most_common(8)]
+        top8 = [
+            {"label": k, "count": v, "evolucao": _evolucao_list(emp_tag_mes[nome].get(k, {}), meses_ordenados)}
+            for k, v in emp_m[nome].most_common(8)
+        ]
         manut_cnt = manut_emp.get(nome, 0)
         limp_cnt  = limp_emp.get(nome, 0)
         manut_tags_emp = [{"label": k, "count": v} for k, v in manut_emp_tags[nome].most_common()]
@@ -594,23 +614,10 @@ def _volume_insights(vd):
     }
 
 def _evolucao_list(mes_counts, meses_ordenados):
-    """Converte {mes_key: count} num histórico ordenado, no mesmo formato de 'meses' (item novo)."""
+    """Converte {mes_key: count} num histórico ordenado, no mesmo formato de 'meses'."""
+    if not meses_ordenados:
+        return []
     return [{"d": NM.get(mk[5:7], mk[5:7]), "c": mes_counts.get(mk, 0), "k": mk} for mk in meses_ordenados]
-
-def _attach_evolucao(metrics, tag_mes_geral, tag_mes_emp, meses_ordenados):
-    """
-    Anexa 'evolucao' (histórico mensal) a cada tag dentro de classifs.top_tags
-    e a cada motivo dentro de empreendimentos.top_motivos — item novo.
-    O histórico é sempre a série completa (todos os meses), independente do
-    período/mês selecionado na dash, para permitir ver a tendência real da tag.
-    """
-    for classif in metrics.get("classifs", []):
-        for t in classif.get("top_tags", []):
-            t["evolucao"] = _evolucao_list(tag_mes_geral.get(t["label"], {}), meses_ordenados)
-    for emp in metrics.get("empreendimentos", []):
-        emp_dict = tag_mes_emp.get(emp["nome"], {})
-        for t in emp.get("top_motivos", []):
-            t["evolucao"] = _evolucao_list(emp_dict.get(t["label"], {}), meses_ordenados)
 
 def _tags_pendentes(all_tags_counter):
     """
@@ -700,33 +707,8 @@ def processar(rows_droz, rows_occ=None):
 
     # 4. Métricas globais
     all_tids = list(ticket_base.keys())
-    gm = _build_metrics(all_tids, ticket_base, ticket_tags, occ_agg)
-
-    # 4.5 Evolução mensal por tag — geral e por empreendimento (novo)
-    # Pedido: mostrar, dentro de cada tema e de cada empreendimento, a tendência
-    # mês a mês da tag predominante (não só o total do período selecionado).
     meses_ordenados = sorted(vm.keys())
-    tag_mes_geral = defaultdict(lambda: defaultdict(int))
-    tag_mes_emp = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
-    for tid, base in ticket_base.items():
-        dt = base["data"]
-        if not dt:
-            continue
-        mes_key = dt.strftime("%Y-%m")
-        tags = [t.strip() for t in ticket_tags.get(tid, [])]
-        mot = [t for t in tags if is_motivo(t)]
-        emps = {detect_emp(t) for t in tags if detect_emp(t)}
-        emps = {e for e in emps if e in EMPREEND_ATIVOS}
-        seen_labels = set()
-        for tag in mot:
-            label = lbl(tag)
-            if label in seen_labels:
-                continue  # evita contar a mesma tag 2x no mesmo ticket
-            seen_labels.add(label)
-            tag_mes_geral[label][mes_key] += 1
-            for e in emps:
-                tag_mes_emp[e][label][mes_key] += 1
-    _attach_evolucao(gm, tag_mes_geral, tag_mes_emp, meses_ordenados)
+    gm = _build_metrics(all_tids, ticket_base, ticket_tags, occ_agg, meses_ordenados=meses_ordenados)
 
     # 5. Volume charts
     dias_s = sorted(vd.items())
@@ -743,8 +725,9 @@ def processar(rows_droz, rows_occ=None):
     for mes_key in sorted(vm.keys()):
         month_tids = [tid for tid, base in ticket_base.items()
                       if base["data"] and base["data"].strftime("%Y-%m") == mes_key]
-        mm = _build_metrics(month_tids, ticket_base, ticket_tags, occ_agg)
-        _attach_evolucao(mm, tag_mes_geral, tag_mes_emp, meses_ordenados)
+        # meses_ordenados global (não só os do mês) para a tendência da tag
+        # aparecer sempre completa, independente do período selecionado.
+        mm = _build_metrics(month_tids, ticket_base, ticket_tags, occ_agg, meses_ordenados=meses_ordenados)
         month_dias = [{"d":d[8:]+"/"+d[5:7],"c":c}
                       for d,c in sorted(vd.items()) if d[:7]==mes_key]
         month_vd = Counter({d: c for d, c in vd.items() if d[:7] == mes_key})
